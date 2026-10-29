@@ -52,6 +52,16 @@ def output_path(option, path):
     return target
 
 
+def same_file(first, second):
+    """Resolve spelling and symlink aliases, then check existing files for hardlinks."""
+    if first.resolve() == second.resolve():
+        return True
+    try:
+        return first.samefile(second)
+    except FileNotFoundError:
+        return False
+
+
 def write(image, path):
     """Save one picture, naming the path and the reason if it cannot be written.
 
@@ -165,10 +175,16 @@ def parse(argv):
 
 def main(argv=None):
     args = parse(sys.argv[1:] if argv is None else argv)
+    used = [("the before screenshot", Path(args.before)), ("the after screenshot", Path(args.after))]
     for option, path in (("--out", args.out), ("--diff", args.diff)):
         try:
-            output_path(option, path)
-        except ValueError as e:
+            target = output_path(option, path)
+            if target is not None:
+                for label, other in used:
+                    if same_file(target, other):
+                        raise ValueError(f"{option} {path} is the same file as {label} {other}")
+                used.append((option, target))
+        except (ValueError, OSError, RuntimeError) as e:
             print(f"{e}. Nothing was read or written.", file=sys.stderr)
             return 2
     try:
