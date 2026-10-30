@@ -462,11 +462,20 @@ final class HomeApps {
             return new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(tuner))
                     .setComponent(mediaTek.getComponent());
         }
+        if (mediaTek != null) return mediaTek;
         if (tuner != null) {
             Intent channels = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelsUriForInput(tuner));
-            if (channels.resolveActivity(pm) != null) return channels;
+            // A known brand's TV app, pinned explicitly: a bare launch of that same app (the fallback loop
+            // below) only resumes whatever source it last showed, HDMI included, so the tuner has to be named.
+            // Explicit component: some file managers also answer this generic URI with no default set, which
+            // would otherwise make Android show an "Open with" chooser instead of going straight to Live TV.
+            for (String pkg : LIVE_TV_APPS) {
+                Intent app = launchIntent(pm, pkg);
+                if (app != null) return channels.setComponent(app.getComponent());
+            }
+            ComponentName resolved = channels.resolveActivity(pm);
+            if (resolved != null) return channels.setComponent(resolved);
         }
-        if (mediaTek != null) return mediaTek;
         for (String pkg : LIVE_TV_APPS) {
             Intent app = launchIntent(pm, pkg);
             if (app != null) return app;
