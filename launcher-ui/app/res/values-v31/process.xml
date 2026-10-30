@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12: like Android 11, a TCL Google TV 12 set finishes DreamActivity at once when the DreamService runs in
+     :home (#24), so Screensaver runs in the main process here. Same component name as on every other version, so a TV
+     already set to .Screensaver keeps working after the update, without touching screensaver_components. -->
+<resources>
+    <string name="dream_process" translatable="false">io.cleanyourtv.ui</string>
+</resources>
