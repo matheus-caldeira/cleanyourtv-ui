@@ -36,9 +36,21 @@ def output_path(option, path):
     Exit status 1 is 'the two screenshots differ', a finding the reader acts on, so a folder typed wrong
     must not come back as one: --out and --diff are judged here, before the images are opened and before
     Pillow is imported, and a path that cannot be written is named rather than attempted.
+
+    Left out is not the same as given empty. Both options are optional, so `--out "$OUT"` with OUT unset
+    used to be dropped on the floor: the pair the run was asked to write was never written, nothing said
+    so, and the run went on to report the comparison with 0 or 1 - the statuses that say the pictures were
+    compared and, if they differ, nothing was. A name that came out empty is named here, with the way out,
+    before anything is read.
     """
-    if not path:
+    if path is None:
         return None
+    if not path.strip():
+        example = "--out shots/before-after.png" if option == "--out" else "--diff shots/diff.png"
+        raise ValueError(f"{option} was given as {path!r}, an empty name, so no picture would be written: "
+                         f"name the file, e.g. {example} - and if the name came from a "
+                         f"shell variable, that variable was empty. Leave the option out to compare without "
+                         f"writing it")
     target = Path(path)
     if target.is_dir():
         raise ValueError(f"{option} {path} is a folder, so nothing could be written there: "

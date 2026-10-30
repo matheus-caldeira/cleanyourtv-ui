@@ -93,6 +93,27 @@
 #   com.mediatek.partner.airplay; AirplayAPK serves a TvInputService, so it too needs TVINPUT_ALLOW=1),
 #   com.vt.miracast and com.hisense.tv.dlna, plus unused streaming apps and preloads; mediashell (Chromecast)
 #   and the firmware updaters stayed on. Nothing broke, and every package stayed disabled across both reboots.
+#
+# Sixth and seventh units: two sets in one home (same device songshan, build RTT2.220118.001, incremental
+# 00.00.00.53, security patch 2025-06-01, Android model string "SmartTV 4K"; retail model not checked). One
+# session on 2026-10-29 with two reboots each: this list plus the three commented entries marked "third unit"
+# and com.hisense.evservice, applied in batches with a screenshot between them, then the launcher. Nothing came
+# disabled from the factory; storemode is not installed, evservice is. Notes from them:
+# - As on the fifth unit, tools/disable.sh held back gtvpai and disclaimercustomization (no permission block in
+#   dumpsys); with every input still registered after a reboot (AV, three HDMI, the tuner, AirPlay), TVINPUT_ALLOW=1
+#   disabled them.
+# - On both, setupwraith owned one saved Wi-Fi network that the TV was not using, and the active one belonged to
+#   android.uid.system, so disable.sh's guard held it back; FORCE_SETUPWRAITH=1 disabled it, that one saved network
+#   was deleted and the TV stayed on Wi-Fi and ADB. Usage & diagnostics was switched off in Settings first.
+# - As on the third unit, with launcherx disabled and no key helper enabled, Home, Back, Input and the gear worked
+#   when pressed for real, and a held Volume Up still ramped.
+# - Power-on goes FallbackHome, then the new launcher; the firmware does not put Live TV in front by itself.
+# - The owner also disabled katniss, hisense.alexa, mediashell, com.vt.miracast, com.hisense.tv.dlna,
+#   com.vt.tv.homekitproxy, dreamx, HiBrowser, Play Games, Google TV Movies, YouTube Music, both VIDAA apps
+#   (net.vidaatv.*) and every unused streaming app (the seventh unit also had YouTube TV and Haystack News);
+#   AirPlay and the firmware updaters stayed on. Every package stayed disabled across both reboots.
+# - After "Revoke USB debugging authorizations", a detached `settings put global adb_enabled 0; reboot` started
+#   from the same ADB shell never ran (port 5555 stayed open); switching USB debugging off with the remote closed it.
 
 # Retail / store demo
 com.hisense.storemode

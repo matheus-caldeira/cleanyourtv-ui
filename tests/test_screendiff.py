@@ -310,6 +310,38 @@ class OutputPathTest(unittest.TestCase):
         self.assertIn(f"--out {out} has no extension", stderr)
         self.assertIn(f"name it {out}.png", stderr)
 
+    def test_an_empty_out_is_refused_rather_than_read_as_no_pair(self):
+        """`--out "$OUT"` with OUT unset asked for a pair: it used to compare and write none, with 0."""
+        code, stdout, stderr = self.run_tool(["before.png", "after.png", "--out", ""])
+        self.assertEqual(code, 2, "an empty --out must not read as 'no pair was asked for'")
+        self.assertEqual(stdout, "")
+        self.assertIn("--out was given as '', an empty name", stderr)
+        self.assertIn("--out shots/before-after.png", stderr)
+        self.assertIn("that variable was empty", stderr)
+        self.assertIn("Nothing was read or written", stderr)
+        self.assertNotIn("identical", stderr)
+        self.assertNotIn("Traceback", stderr)
+
+    def test_an_empty_diff_is_refused_the_same_way(self):
+        code, stdout, stderr = self.run_tool(["before.png", "after.png", "--diff", ""])
+        self.assertEqual(code, 2)
+        self.assertEqual(stdout, "")
+        self.assertIn("--diff was given as '', an empty name", stderr)
+        self.assertIn("Nothing was read or written", stderr)
+
+    def test_a_blank_out_is_refused_too(self):
+        # `--out "$SPACE"` reads as no name at all once the shell has split it away.
+        code, _, stderr = self.run_tool(["before.png", "after.png", "--out", "   "])
+        self.assertEqual(code, 2)
+        self.assertIn("--out was given as '   ', an empty name", stderr)
+
+    def test_the_option_left_out_is_still_no_pair(self):
+        """Only an empty value is refused: leaving --out or --diff out is how a run writes neither."""
+        self.assertIsNone(screendiff.output_path("--out", None))
+        self.assertIsNone(screendiff.output_path("--diff", None))
+        self.assertEqual(screendiff.output_path("--out", str(self.dir / "pair.png")),
+                         self.dir / "pair.png")
+
     def test_the_paths_are_judged_before_the_screenshots_are_opened(self):
         # Neither argument exists, so anything that opened them would say so first.
         code, _, stderr = self.run_tool(["missing-before.png", "missing-after.png",
