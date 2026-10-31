@@ -23,41 +23,49 @@ Port 5555 opens over Wi-Fi without pairing prompts (`ro.adb.secure=0`). `persist
 
 ---
 
-## Safety Warning: Never disable `com.skyworth.officehomepage`
+## Safety Warning: Critical Packages to Keep
 
 > [!CAUTION]
-> **Do not disable `com.skyworth.officehomepage` directly.**
-> On this firmware, disabling the stock home application (`pm disable-user --user 0 com.skyworth.officehomepage`) breaks the system boot chain and causes the TV to hang indefinitely at the SKYWORTH boot logo. The network stack does not initialize, leaving ADB and port 5555 unreachable.
+> **Do not disable any of these critical system packages:**
+> - **`com.skyworth.officehomepage`** & **`com.tianci.movieplatform`**: Stock launchers for Office Mode and Standard Mode. The Coocaa OS boot flow hard-depends on them; disabling either causes the system to hang indefinitely at the boot logo (network stack fails to start, ADB drops).
+> - **`com.loostone.tuning`**: Microphone tuning & audio HAL driver bridge. Disabling it triggers `AudioService`/HAL self-test timeouts and boot hangs.
+> - **`com.tianci.user`**: User authentication & token provider with strong IPC Binder dependencies across system framework daemons.
 >
-> Recovery requires entering Recovery Mode and performing a hardware factory reset ("Wipe data / factory reset"). **Keep `com.skyworth.officehomepage` enabled at all times.**
+> Recovery requires entering hardware Recovery Mode and performing a factory reset ("Wipe data / factory reset"). **Keep all four enabled at all times.**
 
 ---
 
 ## Debloat verification: persistence across cold reboot
 
-The 16 packages in [`examples/skyworth-7t861-a23/debloat.txt`](../../examples/skyworth-7t861-a23/debloat.txt) remove telemetry, ad daemons, app store push services, and factory calibration background tools.
+The packages in [`examples/skyworth-7t861-a23/debloat.txt`](../../examples/skyworth-7t861-a23/debloat.txt) remove telemetry, ad daemons, app store push services, and factory background tools.
 
-### Verified safe to disable (16 packages)
+### Recommended: Zero Debloat via Native Office Mode
+
+> [!TIP]
+> **Debloating is optional on this firmware.**
+> If the TV is switched to **办公模式 (Office Mode)** in the native system settings, Coocaa OS internally suppresses all video streaming recommendations, banner advertisements, and background cloud preloading.
+>
+> Setting up CleanYourTV under native Office Mode produces an instant cold boot with **zero native loading screens** ("正在准备..."), while leaving all system packages fully intact (`pm list packages -d` remains empty), eliminating any risk of boot hangs.
+
+### Verified safe to disable (12 packages)
 
 - **Telemetry & Diagnostics (4)**:
   `com.skyworth.performance.monitors`, `com.skyworth.testtime`, `com.skyworthdigital.stb.dataprovider`, `com.skyworth.device`
-- **Ads & Manufacturer Push (5)**:
-  `com.coocaa.tvmanager`, `com.coocaa.guide`, `com.tianci.de`, `com.tianci.user`, `com.coocaa.theme_package_ccos_nine`
-- **Preloaded Stores & Streaming (5)**:
-  `com.coocaa.tvpitv`, `com.tianci.movieplatform`, `com.tianci.appstore`, `com.skyworth.skymarket`, `com.coocaa.app_browser`
-- **Factory & Tuning Background Daemons (2)**:
-  `com.loostone.tuning`, `com.coocaa.factory`
+- **Ads & Manufacturer Push (3)**:
+  `com.coocaa.tvmanager`, `com.coocaa.guide`, `com.tianci.de`
+- **Preloaded Stores & Streaming (4)**:
+  `com.coocaa.tvpitv`, `com.tianci.appstore`, `com.skyworth.skymarket`, `com.coocaa.app_browser`
+- **Factory & System (1)**:
+  `com.coocaa.factory`
 
-In particular, `com.skyworth.device` (SmartDevice IoT and location reporting) and `com.coocaa.theme_package_ccos_nine` (default GoldenFaithTheme package) were tested for persistence:
-1. Disabled via `tools/tv.py 'pm disable-user --user 0 com.skyworth.device'` and `tools/tv.py 'pm disable-user --user 0 com.coocaa.theme_package_ccos_nine'`.
-2. Verified after a cold reboot (power cycled): both packages remained in state `disabled-user` (`enabled=3`). The system did not re-enable them.
-3. Bluetooth remote pairing, Wi-Fi connectivity, picture adjustments, and audio remain fully functional with nothing missing.
-
-### Must stay enabled
+### Must stay enabled (Critical system lifelines)
 
 | Package | Purpose / Why it must stay enabled |
 |---|---|
-| `com.skyworth.officehomepage` | Stock home application; disabling causes fatal hang on SKYWORTH boot logo |
+| `com.skyworth.officehomepage` | Office Mode stock home; disabling breaks system boot chain and hangs indefinitely on boot logo |
+| `com.tianci.movieplatform` | Standard Mode stock home base; boot chain hardcoded dependency, disabling causes fatal boot hang on COOCAA/SKYWORTH logo |
+| `com.loostone.tuning` | Loostone microphone tuning and audio HAL driver bridge; disabling causes AudioService / HAL timeout during boot |
+| `com.tianci.user` | Coocaa user account & auth service; framework Binder IPC dependency |
 | `com.skyworth.tv` | HDMI, AV, and TV tuner input switching; picture and sound settings |
 | `com.tianci.localmedia` | Built-in USB media player and local storage access |
 
@@ -65,9 +73,12 @@ In particular, `com.skyworth.device` (SmartDevice IoT and location reporting) an
 
 ## Replacing Home: Coocaa OS boot and Home key mechanism
 
-Coocaa OS does not use Android's standard `Intent.CATEGORY_HOME` activity chooser. Instead:
-- Home navigation and boot dispatch are controlled by system properties: `persist.service.homepage.pkg`, `persist.service.homepage.cls`, `persist.service.model.pkg`, and `persist.service.model.cls`.
-- In addition, Coocaa OS aggressive process management terminates third-party background applications whose package name does not begin with manufacturer prefixes (`coocaa`, `skyworth`, `tianci`, `android`).
+Coocaa OS does not use Android's standard `Intent.CATEGORY_HOME` activity chooser.
+For seamless cold boot without native transition overlays, follow this setup sequence:
+
+### Step 0: Switch to Office Mode in TV Settings
+
+Before installing CleanYourTV or redirecting properties, switch the television's desktop to **办公模式 (Office Mode)** using the remote in native system settings/menu. This ensures the firmware records `OfficeMode` as the active scene in its persistent database, silencing the video recommendation engine.
 
 ### Step 1: Build the launcher under Coocaa package ID
 

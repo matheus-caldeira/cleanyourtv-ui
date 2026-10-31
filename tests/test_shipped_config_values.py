@@ -22,6 +22,7 @@ Run from the repository root: python3 -m unittest discover -s tests -v
 """
 import json
 import re
+import tempfile
 from pathlib import Path
 import unittest
 
@@ -81,9 +82,16 @@ def problems(values, kinds):
     return out
 
 
-def config_files():
-    """Every config.json a theme or an example ships, sorted."""
-    return sorted(ROOT.glob("themes/*/config.json")) + sorted(ROOT.glob("examples/*/config.json"))
+def config_files(root=None):
+    """Every config.json a theme or a list folder ships at any depth, sorted.
+
+    A list folder may ship a whole theme under theme/, and its README tells the owner to edit that
+    config.json and push it with tools/theme.sh (examples/philips-google-tv-ta7). Six folders ship
+    one; a glob of examples/*/config.json reads none of them, so a value the launcher drops there
+    went out without a word, the shape of the 320 above.
+    """
+    root = ROOT if root is None else root
+    return sorted((root / "themes").glob("*/config.json")) + sorted((root / "examples").rglob("config.json"))
 
 
 class ShippedConfigValuesTest(unittest.TestCase):
@@ -106,6 +114,8 @@ class ShippedConfigValuesTest(unittest.TestCase):
     def test_no_shipped_value_is_one_the_launcher_drops(self):
         files = config_files()
         self.assertGreaterEqual(len(files), 50, "fewer config.json files found than the tree ships")
+        self.assertTrue(any(path.parent.name == "theme" for path in files),
+                        "no list folder's theme/config.json was read: is the walk one level deep again?")
         checked = 0
         for path in files:
             values = json.loads(path.read_text(encoding="utf-8"))
@@ -115,6 +125,24 @@ class ShippedConfigValuesTest(unittest.TestCase):
                     self.fail(f"{path.relative_to(ROOT)} sets `{key}` and {why}: the launcher shows its "
                               f"built-in value instead, and nothing says so")
         self.assertGreaterEqual(checked, 150, "the sweep read far fewer values than the tree carries")
+
+    def test_a_value_in_a_theme_folder_below_a_list_folder_is_reported(self):
+        # The shape of the 320 above, in the file examples/philips-google-tv-ta7/README.md tells the
+        # owner to edit: 42 columns is outside the 1 to 8 the launcher keeps, and a one-level glob
+        # never read the file it is in.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = root / "examples" / "acme-1" / "theme" / "config.json"
+            nested.parent.mkdir(parents=True)
+            nested.write_text('{"columns": 42, "dock_apps": ["com.example"]}\n', encoding="utf-8")
+            top = root / "examples" / "acme-1" / "config.json"
+            top.write_text('{"columns": 5}\n', encoding="utf-8")
+            files = config_files(root)
+            self.assertEqual([path.relative_to(root).as_posix() for path in files],
+                             ["examples/acme-1/config.json", "examples/acme-1/theme/config.json"])
+            reported = dict(problems(json.loads(nested.read_text(encoding="utf-8")), self.kinds))
+            self.assertEqual(sorted(reported), ["columns"])
+            self.assertIn("outside 1 to 8", reported["columns"])
 
     def test_the_acer_example_keeps_the_network_name_it_documents(self):
         # The fix for the 320 above is to ask for a width the launcher keeps, not to stop asking: the

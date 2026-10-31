@@ -14,15 +14,34 @@ powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost 192.168.1.50 th
 
 `tools/venv/bin/python -I tools/manage.py list themes` and `list switches` list them from this file, `show <name>` gives one with its
 screenshot, and `manage.py set <switch> <value> --theme <your folder>` writes a key into a theme folder of your own
-and pushes it with `theme.sh`. The folder has to be outside this checkout: one under `themes/` or `examples/` is
-refused (copy a theme first), and a `config.json` it cannot read is named before anything is written or pushed.
+and pushes it with `theme.sh` (`theme.ps1` on Windows). The folder has to be outside this checkout: one under `themes/` or `examples/` is
+refused (copy a theme first), a `config.json` it cannot read is named before anything is written or pushed, and a
+folder that is not there is refused too rather than made - an empty folder of your own is fine, `set` starts the
+`config.json` in it. Pushing replaces the theme on the TV and empties the pictures it pushed before, so a mistyped
+path would leave a one-key theme behind.
+
+On Windows, the manager's theme operations need no Bash: they use `pwsh`, or `powershell` if `pwsh` is not on
+PATH, without loading profiles or changing execution policy. If the computer's policy blocks scripts, the
+PowerShell error is reported rather than bypassed. From the repository root in PowerShell:
+
+```powershell
+$env:TV_HOST = '192.168.1.50'
+.\tools\venv\Scripts\python.exe -I .\tools\manage.py list themes
+.\tools\venv\Scripts\python.exe -I .\tools\manage.py install aurora
+Copy-Item .\themes\aurora "$HOME\my-theme" -Recurse
+.\tools\venv\Scripts\python.exe -I .\tools\manage.py set columns 6 --theme "$HOME\my-theme"
+```
+
+`install <theme>` takes only the theme's name, not script arguments. `set` saves the local `config.json`
+before pushing it; if the push fails, the edit stays on disk and the error says the TV may be only partly
+updated. Add-ons with custom shell installers still need Bash; this native Windows support covers themes.
 
 | Theme | What it does | Screenshot |
 |---|---|---|
 | `default/` | The built-in look written out as JSON, as a starting point for your own | <img src="default/screenshot.jpg" width="320" alt="default theme"> |
 | `aurora/` | A dark aurora wallpaper (teal and violet on navy, darker at the bottom) with a matching background colour | <img src="aurora/screenshot.jpg" width="320" alt="aurora theme"> |
 | `blocky/` | Eleven blocky pixel-art scenes that follow the time of day: a meadow by day, at dusk and at night, plains, desert, a snowy forest, jungle, ocean, a blossom grove, a cave and a lava cavern, each with its name under the buttons and behind the clock screensaver; the sun, moon and clouds sit behind the hills and trees. Drawn in code by `tools/blocky_wallpapers.py`, and the header rows stay plain sky | <img src="blocky/screenshot.jpg" width="320" alt="blocky theme"> |
-| `cinematic/` | OLED and cinema look: true-colour wallpaper, a 6-column frosted-glass dock, no ambient glow and the idle clock after two minutes | <img src="cinematic/screenshot.jpg" width="320" alt="cinematic theme"> |
+| `cinematic/` | OLED and cinema look: true-colour wallpaper, a 6-column frosted-glass dock, no ambient glow and the idle clock after two minutes. The wallpaper is CC0, not MIT: see `cinematic/CREDITS.md` | <img src="cinematic/screenshot.jpg" width="320" alt="cinematic theme"> |
 | `dussehra/` | Festive skin for Dussehra (ends 21 Oct 2026): a marigold toran, a faint gold rangoli, a diya for Wi-Fi, a bell for Inputs, a marigold for Settings and a petal shower | <img src="dussehra/screenshot.jpg" width="320" alt="dussehra theme"> |
 | `glass/` | Dark navy wallpaper with soft teal and violet light, the cinematic top shelf, a frosted-glass dock, icon-only buttons and the focus glow in the app's colour, gliding without overshoot | <img src="glass/screenshot.jpg" width="320" alt="glass theme"> |
 | `halloween/` | Halloween until 1 Nov 2026: an illustrated haunted house (our own, CC0) and seven night photos from Wikimedia Commons (jack-o'-lanterns by candlelight, a full moon behind a sequoia grove and over a Swedish fjord, a moonrise, two cemeteries in fog), a new one every 30 minutes (credited in `halloween/CREDITS.md`, not on screen), and a frosted-glass dock. With a launcher that knows `seasonal_skin`, the Halloween skin too: a jack-o'-lantern for Wi-Fi that glows while online, a bat for Inputs, a ghost for Settings, bats over the first Home of the day and "Happy Halloween"; it switches itself off after 1 November, the pictures stay until `--reset`. The illustration is CC0; the photos are CC0, public domain, CC BY and CC BY-SA, not MIT: see `halloween/CREDITS.md` | <img src="halloween/screenshot.jpg" width="320" alt="halloween theme"> |
@@ -36,6 +55,11 @@ refused (copy a theme first), and a `config.json` it cannot read is named before
 
 Every theme folder has a `screenshot.jpg` of Home with that theme on a real TV. `tools/theme.sh` never
 pushes it; it is only here so you can see a theme before you try it.
+
+A theme that did not draw its own pictures says where each one came from, and under which licence, in a
+`CREDITS.md` in its folder (`docs/DOS-AND-DONTS.md` has the rule and `themes/CREATE_A_THEME.md` the
+format). Its row in the table above names that file, so a reader picking a theme can see before pushing
+it whether its pictures are MIT or, say, CC BY-SA.
 
 ## Keys
 
@@ -125,6 +149,7 @@ A new key needs one there in the same pull request.
 | `festival_until` | `YYYY-MM-DD` | Last day the festive skin shows; it switches itself off after that. A malformed date turns it off |
 | `greeting` | string | Replaces the time-of-day greeting while the festive skin is on |
 | `accent_color` | `#RRGGBB` | Colour of the focus glow while the festive skin is on; diya gold if not set, pumpkin orange for `halloween` |
+| `settings_key_scancodes` | list, `config.xml` only | The same buttons by Linux scancode, for `HomeKeyService` (`HOME_KEY_SERVICE=1`); the Xiaomi/Fengmi projector remote's gear is scan 384. `Config.java` reads `settings_key_keycodes` out of a theme but never this one, so a `config.json` that sets it is dropped - it belongs in `config.xml` before the build. Find a code with `tools/tv.py 'getevent -lt'` |
 | `settings_key_keycodes` | list of keycodes | Remote buttons that open Settings, for `HomeKeyService` (TCL Google TV gear: `[83]`) |
 | `settings_key_panel` | bool | Those buttons open a small quick settings panel (TV settings, Display, Network, Apps, Launcher settings) instead of the TV's Settings |
 | `settings_fallback_components` | list, `config.xml` only | Vendor screens tried in order when nothing usable answers the standard Settings action (Xiaomi China, TCL/FFALCON, and Fire OS, where the real menu lives in its launcher), each as `package/activity`; the first one whose package is installed wins, and when none is, the standard intent is sent anyway and may open nothing. Fire OS answers that intent with a `CTSDummy` stub, which counts as missing so the fallback runs. A package named here also has to be listed in the launcher's `<queries>` (Android 11 package visibility), so a set whose settings app is neither of these needs a build, not a theme push. Not read from a theme |

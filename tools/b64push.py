@@ -93,10 +93,23 @@ def main():
         return 2
     b64 = remote + ".b64.part"
     part = remote + ".part"
+    # Sized before the try on purpose: a path this transport cannot carry is an argument error, and
+    # a refusal raised inside would run the finally's staging cleanup, so the push would have
+    # touched the TV after all.
+    # base64 of the chunk plus the echo (which names the staging file) must fit one payload
+    chunk = min(CHUNK, (dev.max_chunk_size - 85 - len(b64)) * 3 // 4)
+    chunk -= chunk % 3   # a multiple of 3, or each chunk ends in '=' padding mid-stream and base64 -d corrupts it
+    if chunk < 256:
+        # Under 256 raw bytes per chunk the transfer degenerates into one- and two-byte commands,
+        # and with no room at all it sends no chunk, reports a MISMATCH and leaves the staging
+        # cleanup as the only thing that ran. The path is wrong for this transport, not the
+        # transfer: refused like the argument errors above, before anything is sent.
+        sys.stderr.write(f"refusing remote path {remote!r}: staged as {q(b64)} it leaves under 256 "
+                         f"bytes per chunk at this transport's {dev.max_chunk_size}-byte limit. "
+                         "Nothing was sent to the TV.\n")
+        dev.close()
+        return 2
     try:
-        # base64 of the chunk plus the echo (which names the staging file) must fit one payload
-        chunk = min(CHUNK, (dev.max_chunk_size - 85 - len(b64)) * 3 // 4)
-        chunk -= chunk % 3   # a multiple of 3, or each chunk ends in '=' padding mid-stream and base64 -d corrupts it
         # Only our own temporary names are cleared; the target stays until the copy is verified.
         # `: >` creates the base64 file even for an empty upload, so `base64 -d` has an input.
         dev.shell(f"rm -f {q(b64)} {q(part)} && : > {q(b64)}")

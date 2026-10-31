@@ -185,3 +185,35 @@ Notes from this unit:
 - **`com.tcl.dashboard/.MainActivity`** started (`topResumedActivity`) but showed nothing on screen, and its window
   blocks `screencap`.
 - `wm size` shows the same factory override of 1920x1080, density 320.
+
+## Compatibility report: TCL 50C71K, Netherlands, Ethernet
+
+TCL 50C71K QD-Mini LED (2025), model "Smart TV Pro", device `G08`, MediaTek `tcl9618`, Google TV 14 (SDK 34),
+firmware `UTT2.250416.001 AU02`, about 2.4 GB RAM, 32-bit only (`armeabi-v7a,armeabi`), on its built-in Ethernet
+port with no saved Wi-Fi. Set up on 30 October 2026 in one session: this list as the starting point, applied in
+six batches with screenshots between them, then the launcher with `build-and-install.sh` (built in Docker with
+`tools/docker-build.sh`, then `SKIP_BUILD=1 HOME_KEY_SERVICE=1`). Rebooted once: every package stayed disabled,
+nothing re-enabled itself, Home came back as the first resumed activity after `FallbackHome`, and Ethernet came
+back. This is a single-session report, not several days of use.
+
+**Different choices from the UK unit:** `com.tcl.ttvs` kept, for firmware updates. Netflix, YouTube, Chromecast
+and Assistant (`katniss`) kept; Prime Video, AirPlay (all three packages) and the soundbar updater disabled.
+Also disabled, as on the C755 and G08 US lists: `com.android.adservices.api`,
+`com.android.federatedcompute.services` and `com.android.ondevicepersonalization.services`.
+
+What was checked on the TV: Home and the Input button's source panel after each batch, the Inputs menu (HDMI 1-4
+and Live TV), switching to HDMI 1 (`com.tcl.tv/.TVActivity` on top), D-pad from the dock into the grid, up to the
+top bar and against both ends of it, the Clock screensaver setting, AdGuard Private DNS validating, and YouTube
+playback with it on.
+
+Notes from this unit:
+
+- **setupwraith and Ethernet**: as on the 65P89L, `disable.sh` skipped setupwraith because `dumpsys wifi` printed
+  no `cname=`. `cmd wifi list-networks` said "No networks" and the TV was on `eth0`, so `FORCE_SETUPWRAITH=1`
+  disabled it and ADB stayed up.
+- **Network ADB**: on this firmware, switching on USB debugging alone opens port 5555 (Wireless debugging stayed off). Switch USB debugging off again when you are done.
+- **Remote buttons with `HomeKeyService`**: the Settings (83), Netflix (4062) and YouTube (190) keys from
+  `config.json` worked on the real remote, and so did Input and the mic. The helper was bound after the reboot
+  with no `TclAppBoot` refusal. The owner sets volume on an optical-connected sound system's own remote, so the
+  held-volume trade-off did not apply.
+- `wm size` shows the same factory override of 1920x1080, density 320.

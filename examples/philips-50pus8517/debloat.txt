@@ -139,6 +139,21 @@
 #   TPTvServiceAgent); `app_keys` scan:786:org.xbmc.kodi remaps it with HomeKeyService alone, so
 #   InputKeyService was not enabled and SOURCES stays the Philips drawer. Checked on the real remote: Home,
 #   SOURCES, Settings, YouTube, Netflix -> Kodi, and holding Volume + still ramps (sound out to a soundbar).
+#
+# FOURTH UNIT: another Philips 65PUS9206/12 (France), same board and build (PH1M_EA_9970A, RTT2.211108.001).
+# Its owner's own 25-entry selection, 22 of them from this list, applied on 23 October 2026 in three batches
+# with the real remote, then lived with for a week: tools/check.py ran every evening until 30 October and
+# nothing drifted. So the entries it shares with this list hold for days on this model, not only one day.
+# - io.mimi.tvapp (the Mimi hearing-test app, not the io.mimi.sdk.service sound path) was tried disabled and
+#   was back to enabled=1 after a reboot, like com.phorus.playfi.tv; leave it out of a list.
+# - The three entries not in this list stayed disabled all week with nothing missed: org.droidtv.astrahdplus,
+#   org.droidtv.dropboxprovider and com.phorus.playfi.softap (Play-Fi's speaker-setup access point; the
+#   playfi.tv service itself stays enabled, as above).
+# - Disabling katniss did not clear the secure voice_interaction_service / assistant settings on this unit, so
+#   restoring it needed no settings commands.
+# - The stock launcher's HOME filter has priority 2 on this firmware: the Home key kept opening tvlauncher until
+#   it was disabled, then resolved to the new launcher at once.
+# - aurora was off from the factory here too; no xtv retry loop in the 30 s idle log, nothing visible broke.
 
 # TP Vision telemetry. org.droidtv.gel runs inside the candeebug process
 # (android:process="org.droidtv.candeebug"), so disabling candeebug alone leaves a process with

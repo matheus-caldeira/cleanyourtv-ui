@@ -21,6 +21,12 @@ asked anything, so a typo cannot read as a recording that failed. Started with a
 packages, it runs again under tools/venv's Python, or says how to make that venv, the way tools/bench.py
 does.
 
+Exit status: 0 every run is recorded and written; 2 an argument this run cannot use (an --out that is a
+file or passes through one, an empty --out, a --package or --app that is not one, --runs outside 1 to 50)
+and a TV that cannot be reached (tools/tv.py's sentence says which failure it was) - both judged before
+anything is recorded, so nothing was written and --out was not made; 1 a recording that started and then
+failed.
+
 Scenarios (setup runs before the recording starts, so it stays out of the trace):
     cold     another app in front, the launcher force-stopped, then started with `am start -W`
     coldsys  Home in front, the launcher force-stopped: Android starts it again by itself
@@ -276,8 +282,19 @@ def main(argv=None):
 
     try:
         dev = tv.connect()
-    except OSError as e:
-        sys.exit(f"cannot reach the TV at {tv.HOST}:{tv.PORT} ({e}). Is it on and awake, with network debugging on?")
+    except Exception as error:
+        # tv.py words the failures that mean the TV was not reached: a port that refuses, a Wireless
+        # debugging port that asks for TLS, an address nothing answers on, and the macOS Local Network
+        # denial that looks like one. This file answered those with a line of its own and exit 1 - the
+        # status a recording that started and then failed leaves - and it caught only OSError, so the TLS
+        # one (adb_shell's InvalidCommandError is not an OSError) ended in a traceback. bench.py, check.py
+        # and b64push.py answer both with tv.py's sentence and exit 2. The errors tv.py has nothing to add
+        # to (a key file it cannot read, a reset in the handshake) keep their traceback.
+        why = tv.connect_error(error)
+        if why is None:
+            raise
+        print(f"{why}\nNothing was recorded: {args.out} is made when the first run starts.", file=sys.stderr)
+        raise SystemExit(2) from error
     shell = lambda cmd: dev.shell(cmd, read_timeout_s=120.0)
     try:
         home = shell("cmd package resolve-activity --brief -a android.intent.action.MAIN "

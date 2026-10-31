@@ -245,7 +245,8 @@ OWNED = ("README.md", "examples/README.md", "tools/readme_stats.py")
 # landed, so its grid said "Xiaomi · 32" and "+49 more brands" over 97 brands while README.md said 34 and
 # +53, and no run moved it.
 TRANSLATIONS = {"README.nl.md": ("tv-modellen", "merken", "talen"),
-                "README.de.md": ("TV-Modelle", "Marken", "Sprachen")}
+                "README.de.md": ("TV-Modelle", "Marken", "Sprachen"),
+                "README.uk.md": ("модель телевізорів", "брендів", "мова")}
 
 
 def readme(text, entries, root, path, words=WORDS):
