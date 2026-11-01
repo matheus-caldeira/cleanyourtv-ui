@@ -5,11 +5,15 @@
 
 Exits 0 when the API answers; 1 when a port answered and it is not the JointSpace API (the package to
 check is named); and 2 when this run could not tell - nothing answered on either port, so the TV may be
-off, asleep, at another address or out of reach from here - or the command line was not one address.
+off, asleep, at another address or out of reach from here - or the command line was not one address:
+a URL; an address carrying a port of its own; one whose colon has nothing after it, or something that
+is not a port number; or an IPv6 written without its brackets. The two ports this asks are the ones
+below, and they go after an address and nothing else.
 
 A port that refuses the connection is the TV answering: nothing listens there, which is what a disabled
-org.droidtv.xtv looks like. A port that times out, answers "No route to host", or a name that does not
-resolve is the network between here and the TV, and says nothing about the package.
+org.droidtv.xtv looks like. A port that times out, answers "No route to host", a name that does not
+resolve, or an address this computer cannot send to at all (a link-local IPv6 with no zone index) is
+the network between here and the TV, and says nothing about the package.
 
 Philips Android TVs are driven from Home Assistant (the built-in philips_js integration), openHAB and
 the like over the JointSpace API. It is served by org.droidtv.xtv, which is in the DO NOT DISABLE block
@@ -30,6 +34,7 @@ answer: the endpoint is there.
 import errno
 import json
 import os
+import re
 import socket
 import ssl
 import sys
@@ -37,13 +42,27 @@ import urllib.error
 import urllib.request
 
 PORTS = ((1926, "https"), (1925, "http"))
+# An address as tools/tv.py takes one in TV_HOST (the TV's IP, or IP:port for an adbd on a port of its
+# own), and a URL pasted from a browser. Both reach find_api() as the host, and both then build a URL
+# that is not one: https://192.168.1.50:1926:1926/6/system is a name that does not resolve, so the run
+# answered "nothing answered on 1926 and 1925, the set may be off" - words about the TV's network for a
+# mistake in the address - and an owner whose TV_HOST is set that way (the form tools/tv.py documents)
+# went looking at the set instead of at the argument. The port in TV_HOST is the ADB port and means
+# nothing to JointSpace, which this finds on 1926 and 1925 by itself, so the address alone is what the
+# check takes. The same goes for the rest of what a colon can carry: `tv.example:` and
+# `tv.example:1926x` build names that do not resolve either, and a bare `fe80::1` has to be bracketed
+# before it can sit in front of a port. split_address() reads the shape and address_problem() names it.
+URL_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*://")
 PROBE = ("ambilight/topology", "ambilight/power", "ambilight/mode", "ambilight/currentconfiguration",
          "powerstate")
 # errno values that mean this computer never reached the TV: a timeout, a network that is not the
 # set's, a host that is gone, or a local permission or sandbox denial that stopped the connect here.
-# What the port said in those cases is about the route, not the TV.
+# EINVAL is the address rather than the route - a bracketed link-local IPv6 with no zone index, an
+# address family this computer does not have - and it is answered here too, because it comes from the
+# local socket layer and never from the set: what the port said in those cases is about the route, not
+# the TV.
 UNREACHED = (errno.EHOSTUNREACH, errno.ENETUNREACH, errno.EHOSTDOWN, errno.ENETDOWN, errno.ETIMEDOUT,
-             errno.ECONNABORTED, errno.EACCES, errno.EPERM)
+             errno.ECONNABORTED, errno.EACCES, errno.EPERM, errno.EINVAL)
 
 
 def answered(failure):
@@ -114,11 +133,63 @@ def find_api(host):
     return None, None, reached
 
 
+def split_address(text):
+    """(address, what follows it) the way tools/tv.py splits a TV_HOST: [ipv6]:port or host:port.
+
+    `what follows it` is None when nothing does, else the text after the colon - which is the port in
+    the form tv.py documents, and can be anything else a reader typed.
+    """
+    if text.startswith("["):
+        end = text.find("]")
+        if end != -1:
+            rest = text[end + 1:]
+            return text[:end + 1], (rest[1:] if rest.startswith(":") else None)
+    if text.count(":") == 1:
+        return tuple(text.split(":", 1))
+    return text, None
+
+
+def address_problem(host):
+    """Why `host` is not an address this check can probe, or None.
+
+    tv.py's TV_HOST takes IP:port, and that port is the ADB one; a JointSpace API is on 1926 (Android
+    TV) or 1925 (older sets), which find_api() tries itself. A URL is the other copy-paste shape. Both
+    are named rather than probed, and so is anything else that leaves the host unusable in the URLs
+    below - a colon with nothing after it, a port that is not a number, an IPv6 without its brackets -
+    because each of them builds a name that does not resolve, and the run then answered "nothing
+    answered on 1926 and 1925, the set may be off": a diagnosis of the TV's network for an argument it
+    could not use.
+    """
+    if URL_SCHEME.match(host):
+        return (f"{host} is a URL, not the TV's address: this check asks the address itself on "
+                f"{PORTS[0][0]} and {PORTS[1][0]}, so pass it alone, without http:// or https://.")
+    address, rest = split_address(host)
+    if rest is None:
+        if ":" in address and not address.startswith("["):
+            return (f"{host} is an IPv6 address written without brackets, so the URLs this asks are not "
+                    f"ones: pass it with brackets, the way tools/tv.py takes one: [{host}].")
+        return None
+    if not rest:
+        return (f"{host} ends in a colon with nothing after it, so it is not an address: pass the TV's "
+                f"address alone: {address}.")
+    if not rest.isdigit():
+        return (f"what follows the colon in {host} is {rest!r}, not a port number, so this is not an "
+                f"address the check can ask: pass the TV's address alone: {address}.")
+    return (f"{host} carries a port, and this check asks the address itself on {PORTS[0][0]} and "
+            f"{PORTS[1][0]}, so pass the TV's address alone: {address}.\n"
+            f"TV_HOST is where that form comes from - tools/tv.py takes IP:port for its ADB "
+            f"connection, and that port is the ADB port, not a JointSpace one.")
+
+
 def main(argv):
     args = argv[1:]
     host = args[0] if args else os.environ.get("TV_HOST", "")
     if len(args) > 1 or not host or host.startswith("-"):
         print(__doc__.split("\n\n")[1], file=sys.stderr)
+        return 2
+    problem = address_problem(host)
+    if problem:
+        print(problem, file=sys.stderr)
         return 2
 
     base, info, reached = find_api(host)

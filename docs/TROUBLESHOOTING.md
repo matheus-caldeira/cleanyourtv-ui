@@ -142,6 +142,14 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   testing with key presses.
 - **Git Bash rewrites paths** like `/data/local/tmp` into Windows paths. The scripts set
   `MSYS_NO_PATHCONV=1` for you. Set `JAVA_HOME` and `ANDROID_HOME` before building there.
+- **`pip install -r tools/requirements.txt` fails on Windows on ARM** with `Failed building wheel for
+  cryptography` ([#2855](https://github.com/Gathin23/cleanyourtv/issues/2855)). The ARM64 build of Python
+  reports `win_arm64`, PyPI's newest `win_arm64` wheel for `cryptography` is 46.0.3, and the file asks for
+  `>=46.0.7`, so pip falls back to the source tarball, which needs Rust and OpenSSL. Nothing about the TV
+  is involved, and the way through is on the PC: make `tools\venv` with the x64 build of Python
+  from python.org instead. Windows 11 on ARM runs it, and 46.0.7 has a `win_amd64` wheel. Whether that floor can come down is
+  [#2855](https://github.com/Gathin23/cleanyourtv/issues/2855)'s question for the maintainer, not a step
+  in a cleanup.
 
 ## Working on the TV
 
@@ -169,6 +177,22 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   launcher with `stock_home_redirect` (`themes/README.md`) instead of disabling it. Seen on a TCL Smart TV
   Pro (`G03_4K_US`, Google TV 11, GTV93,
   [#1653](https://github.com/Gathin23/cleanyourtv/issues/1653)).
+- **Ambient mode's "Select albums" closes at once, or says "Unable to load content"**, while the
+  slideshow itself keeps playing with launcherx and setupwraith off. Screen saver > Ambient mode
+  settings (`am start -a dreamx.two.panel.SETTINGS -p com.google.android.apps.tv.dreamx`) > Google
+  Photos Settings > Select albums starts `PhotosSetupActivityV2`, which stops with the same
+  `Failed to find provider info for
+  com.google.android.apps.tv.launcherx.coreservices.account.AccountModeContentProvider` the Google
+  Home panel bullet above names: the album list is launcherx's. Setupwraith is needed as well - with
+  launcherx on and the wizard off the identity check passes, and then launcherx's
+  `OnboardingActivity` answers "Unable to load content. There was a problem loading your albums."
+  Turn both on (`pm enable com.google.android.apps.tv.launcherx`,
+  `pm enable com.google.android.tungsten.setupwraith`), force-stop launcherx so its onboarding does
+  not come up in the picker's place, change the albums, then return Home and let `check.py --fix`
+  disable both again and put the new launcher back on Home. Home is
+  launcherx's while it is enabled. Seen on a Sony XR-77A80L (`BRAVIA_VH22`, Google TV 12,
+  `STT2.230505.001.S136`,
+  [#2854](https://github.com/Gathin23/cleanyourtv/issues/2854)).
 - **Large pushes hang** through the Python client. Use `tools/b64push.py` for APKs.
 - **`tools/tv.py reboot` never comes back.** `reboot` is a shell command, and adbd stops before it
   sends the shell's last `CLSE`, so the client waits for a reply that cannot arrive: two minutes,
@@ -177,6 +201,19 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   something stalls there. Use `tools/tv.py --reboot`: it sends the reboot through ADB's own service
   and returns once the request is accepted. The TV is still restarting at that point, so let it
   answer again (`tools/tv.py --probe`) before the next command.
+- **`logcat` fills with `Failed to find provider info for
+  com.google.android.tungsten.setupwraith` about twice a second once the wizard is disabled.** On a Sony
+  XR-77A80L (`BRAVIA_VH22`, Google TV 12, `STT2.230505.001.S136 682241`) `com.sony.dtv.sonysystemservice`
+  asks for that provider every 500 ms for as long as `com.google.android.tungsten.setupwraith` is disabled:
+  it starts about three minutes after boot and piled up 3,617 lines in the first half hour, some 7,000 an
+  hour, all from that one process (`pidof com.sony.dtv.sonysystemservice` was its only caller). The wizard
+  being off is the whole cause, and nothing is broken: `pm enable com.google.android.tungsten.setupwraith`
+  stopped it within the second and disabling it again started it again, nothing on screen changes, and idle
+  CPU for the whole TV still fell from 22.6% to 9% after the debloat and the launcher swap. Turning the
+  wizard back on is not the quiet way out either, since its `.RecoveryActivity` takes Home from the
+  launcher: leave it off and let the line repeat. Seen on that one set
+  ([#2853](https://github.com/Gathin23/cleanyourtv/issues/2853)); whether VH2 and VH21 units do the same has
+  not been reported yet.
 - **Every `dumpsys` answers `Service dumps disabled due to hung system process.`**, and `tools/disable.sh`
   skips every package in the list and says to reboot first (older copies of the script said "the TV's dumpsys
   shows neither a requested nor a granted permission block" and named Android 5.x instead). Android's watchdog
@@ -329,6 +366,26 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   tools/tv.py 'pm enable --user 0 com.google.android.apps.mediashell'
   ```
   Keep the package out of your list if you use Stremio on the TV, or cast from a phone.
+- **HDMI ports detect the cable and CEC device, but switching to an HDMI input shows "No Signal"** on a
+  OnePlus TV (65" C00 `Cebu`, Android TV 11 build `RTM8.240401.135`,
+  [#321](https://github.com/Gathin23/cleanyourtv/issues/321); [list](../examples/oneplus-tv-cebu/debloat.txt)).
+  `dumpsys hdmi_control` still sees the connected device (e.g. a PlayStation 5 on HDMI 3,
+  `physical_address: 0x3000`, `port_id: 3`), yet opening the port shows `"No Signal, please check the
+  connection of input source."` after three seconds. When the OnePlus Live TV / input app
+  (`com.heytap.tv.livetv`) opens an HDMI port, its `IPCManager` binds to
+  `com.heytap.tv.support/.server.TvSupportService` (`action: com.heytap.tv.ACTION_SUPPORT`) before
+  tuning the MediaTek hardware session (`com.mediatek.tvinput/.hdmi.HDMIInputService/HDMI300004`). With
+  `com.heytap.tv.support` disabled (its name reads like a customer-support app, so a hand or assistant
+  run that calls `pm disable-user` directly can disable it; `tools/disable.sh` skips it because it asks
+  for `android.permission.TV_INPUT_HARDWARE`), `logcat` prints
+  `Unable to start service Intent { cmp=com.heytap.tv.support/.server.TvSupportService } U=0: not found`
+  and `IPCManager: [IPCManager.java.bind#177]bind:: tv start service is null`, and `dumpsys tv_input`
+  shows `mainSessionToken: null`. A full restore and cold boot are not needed — re-enabling that single
+  package restores the HDMI signal immediately with no reboot:
+  ```sh
+  tools/tv.py 'pm list packages -d | grep com.heytap.tv.support'
+  tools/tv.py 'pm enable --user 0 com.heytap.tv.support'
+  ```
 - **Picking HDMI 1 in the Inputs menu opened an unrelated app**, seen on an RCA Android TV 9
   (Toptech/Zeasn firmware `RTK2851P`, Realtek RTD2851P,
   [#805](https://github.com/Gathin23/cleanyourtv/issues/805)). The launcher switches to a passthrough
@@ -523,6 +580,18 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   android.intent.category.HOME` lists only PatchWall and `FallbackHome`. Keep the stock launcher
   enabled - disabling it leaves only `FallbackHome` - and see the
   [device notes](devices/xiaomi-nemo-laser-cinema2.md) for the queries and the firmware code.
+- **ColorOS TV refuses a HOME install, or boots only a launcher that declares its own category**,
+  verified on an OPPO K9 55 (`OPPOCNM632`), Android 9. The default `com.gathin.tvhome` build is not
+  accepted as Home. The working build is
+  `-PlauncherApplicationId=com.oneplus.tv.launcher2`, and `MainActivity`'s HOME filter also declares
+  `com.heytap.tv.launcher.category.MODERN_HOME` (without that category, ColorOS boot waits on the
+  brand animation). Leave `com.heytap.tv.launcher` installed and enabled: it is the stock home, and
+  building over that package name replaces it. `launcher/build-and-install.sh` installs
+  `com.gathin.tvhome` and would disable a stock launcher it was told to, so do not name
+  `com.heytap.tv.launcher` as `STOCK_LAUNCHER`. The other allowlisted ids are
+  `com.heytap.tv.launcher` (stock, do not overwrite) and `com.oppo.tv.launcher2`. The list is at
+  [`examples/oppo-k9-55-oppocnm632/`](../examples/oppo-k9-55-oppocnm632/) and the full note is
+  `docs/devices/oppo-k9-55-oppocnm632.md`.
 - **The new launcher still doesn't own Home** after the stock one is disabled, seen on Google TV
   (Xiaomi MiTV-MOOR2). Another system app answers HOME: `com.google.android.tungsten.setupwraith`,
   with `.MainActivity` at intent-filter priority 4 and `.RecoveryActivity` at priority 1. You
@@ -955,8 +1024,9 @@ tools/tv.py 'dumpsys accessibility'
 
 A force stop of the launcher (Settings > Apps, a cleaner app, `am force-stop`) takes both helpers off
 that list. With `restore_key_services` on (`config.xml` or a theme) and `WRITE_SECURE_SETTINGS` granted
-(`RESTORE_KEY_SERVICES=1` at install, `-RestoreKeyServices` on Windows), Home puts the helpers that were
-running back on the list the next time it starts; a helper turned off in Settings stays off.
+(`RESTORE_KEY_SERVICES=1` on every install, `-RestoreKeyServices` on Windows; an install without it takes
+the grant back), Home puts the helpers that were running back on the list the next time it starts; a helper
+turned off in Settings stays off.
 
 - **Home puts the helper back on the list after a force stop, and it still is not bound.** `dumpsys
   accessibility` then shows `Bound services:{}`, `accessibility_enabled` falls back to `0`, and the helper
@@ -1348,8 +1418,10 @@ first two writes are what make the opt-in survive, so read why:
 
 - `WRITE_SECURE_SETTINGS` is what lets the launcher write the helper back onto the list at screen-on.
   Without it `GuardKeep` gives up silently and the helper stays off after the first standby, which looks
-  like the helper having died. `RESTORE_KEY_SERVICES=1` at install already grants it
-  ([the force-stop section](#accessibility-helper-enabled-but-the-remote-button-does-nothing)).
+  like the helper having died. `RESTORE_KEY_SERVICES=1` at install (`-RestoreKeyServices` on Windows)
+  already grants it ([the force-stop section](#accessibility-helper-enabled-but-the-remote-button-does-nothing)),
+  and an install without it takes the grant back, the one made by hand above included, so once the opt-in is
+  on, pass it on every reinstall.
 - `GuardRevival` is the listener the system re-binds once the process is gone, and firmware that kills
   third-party apps in standby takes the screen-on watch with it. The rebind is what re-arms it.
 
@@ -1453,8 +1525,12 @@ MGA3200 that cleared the errors:
 tools/tv.py 'settings put global private_dns_mode opportunistic'
 ```
 
-The other failure mode reads differently: when the TV itself says "No internet", the resolver is down
-or unreachable, and the same command restores it. What the optional resolver does, and what it costs,
+The other failure mode reads differently: when the TV itself says "No internet", either the resolver is
+down or unreachable, or — on a streaming box with no battery-backed clock after a mains power loss (or
+with `auto_time` off) — the clock booted at the firmware build date (`Sat Aug 17 2024` on a Xiaomi TV
+Box S 2nd Gen, `MiTV-AFKR0`, `jaws`, Google TV 11, `RTT0.211222.001.772`), so DNS-over-TLS rejects the
+resolver's certificate as not yet valid while NTP cannot resolve its time server to fix the clock.
+Switching back to `opportunistic` and ensuring `auto_time` is `1` breaks the deadlock (`settings put global auto_time 1` after the command above). What the optional resolver does, and what it costs,
 is in the README's "Can it block ads inside apps too?".
 
 When you report how an app does on your TV, say how far it got, because each step can fail on its
@@ -1516,6 +1592,57 @@ that turns it back on sits inside the Settings app that is broken: have ADB open
 count on reaching Settings by hand. `examples/xiaomi-mitv-aesp0` is the one list here that disables the
 package (its second set, in daily use since 21 Oct 2026); carrying that line to a set whose settings app
 is Xiaomi's takes Settings with it.
+
+## Xiaomi HyperOS 3: the power key does nothing, and music stops when the screen goes off
+
+Two faults with one cause on a Xiaomi set running HyperOS 3: a short press of the remote's power button
+is not the framework's, and a screen that goes off force-stops every app the owner installed two seconds
+later. Both were read out of `services.jar` (baksmali) and logcat on a MiTV-MFFU0 (Xiaomi TV S Pro 100,
+`finch`, Android 14 / HyperOS 3, `OS3.0.115.0.UFFMATV`, MediaTek mt5877), and reported with the logcat
+lines in [issue #2869](https://github.com/Gathin23/cleanyourtv/issues/2869).
+
+The power key emits a plain `KEYCODE_POWER` and the framework's short-press policy is
+`SHORT_PRESS_POWER_GO_XIAOAI_MODE`: `KEYCODE_SLEEP` has no effect on it and `mWakefulness` stays awake.
+What turns the screen off is the stock launcher (PatchWall, `com.mitv.tvhome`) together with the two
+screensaver packages, `com.xiaomi.mitv.aod.screensaver` and `com.xiaomi.mitv.hyper.screensaver`, which
+render the off screen. Disable PatchWall - which the launcher install in
+[`examples/xiaomi-mitv-mffu0`](../examples/xiaomi-mitv-mffu0/debloat.txt) needs - and the power button no
+longer turns the TV off; disable either screensaver package and nothing renders the off screen. The same
+build also needs `aod_current_pattern_id` at 107 (music CD) or 108 (music tape): at 110 (lyrics) the
+receiver logs its way to "nothing to do" and the panel never turns off. `mitv.short.power.action`
+(`Settings.System`) chooses 0 screen off (the default, instant wake), 1 standby (deep, and it cuts
+audio) or 2 shutdown, so raising it to 1 to "fix" a screen that will not go off turns screen-off into a
+set that looks powered off.
+
+Screen off also takes the owner's apps with it, unless Xiaomi's cloud rule file says otherwise:
+
+```sh
+tools/tv.py 'logcat -d | grep killAllThirdApp'
+# MitvActivityManagerService: PowerManagerService killAllThirdApp forcestop packageName:com.lxmusic.tv
+```
+
+`MitvPowerManagerService.gotoSleepStayAliveProcess` runs from the screen-off broadcast and asks
+`MitvConfigParser` for bit `0x8000` in `/data/system/mitv_security_center.xml`: a foreground app that
+file names is kept, anything else gets the launcher brought to the front and a thread that sleeps two
+seconds and calls `killAllThirdApp`. The file is pushed by cloud control and cannot be written from the
+shell, and the apps it names are the stock ones (QQ Music TV among them), so a third-party player loses
+its audio about two seconds after the screen goes off.
+
+The firmware carries an off switch for that path: with `Settings.Global disable_back_home_whitelist` set
+to `disable`, the sleep routine returns before any of it runs.
+
+```sh
+tools/tv.py 'settings put global disable_back_home_whitelist disable'
+tools/tv.py 'logcat -d | grep gotoSleepStayAliveProcess'   # expect: ... feature disable
+```
+
+It is a stock settings key, so it survives a reboot, and `settings delete global
+disable_back_home_whitelist` puts the behaviour back. The system then stops forcing the launcher to the
+front on screen-off too, which a third-party home screen wants anyway and a set still on its stock home
+screen would notice.
+
+Both faults are this one build: another Xiaomi firmware may handle screen-off somewhere else and answer
+neither, and no second unit has been reported.
 
 ## Settings freezes, then closes, in Accessibility
 

@@ -14,6 +14,13 @@ was simply asleep went looking for a package nothing had touched. That shape exi
 nothing was learned; it is the rule tools/adb-closed.py and docs/TROUBLESHOOTING.md keep for port 5555 -
 only a refused connection is the TV speaking.
 
+An address is the TV's own, not a TV_HOST written IP:port or a URL pasted from a browser: the two ports
+below are added here, so `192.168.1.50:1926` built `https://192.168.1.50:1926:1926/6/system`, a name that
+does not resolve, and the run answered "nothing answered, the set may be off" over an argument it could
+not use. The same happens to the rest of what a colon can carry - `tv.example:`, `tv.example:abc` and a
+bare `fe80::1` - so every shape is named before a URL is asked, with the address alone to pass (a bare
+IPv6 with its brackets, which is the form tools/tv.py documents).
+
 Run from the repository root: python3 -m unittest discover -s tests -v
 """
 import contextlib
@@ -148,6 +155,22 @@ class ASilentTVIsNotADisabledPackage(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("could not check 192.168.1.51", err)
 
+    def test_an_address_this_computer_cannot_connect_to_is_not_an_answer(self):
+        # A bracketed link-local IPv6 with no zone index (or an address family this computer does not
+        # have) is refused by the local socket layer with EINVAL, before any packet goes out. It came
+        # back as the TV answering, so `TV_HOST=[fe80::1]` - the form the address guard now asks for -
+        # named org.droidtv.xtv as a package to check over an argument the kernel would not send.
+        invalid = {f"{scheme}://[fe80::1]:{port}/6/system":
+                   (None, "Invalid argument", OSError(errno.EINVAL, "Invalid argument"))
+                   for port, scheme in philips_api.PORTS}
+        code, out, _, err = run(invalid, argv=("philips-api.py", "[fe80::1]"))
+        self.assertEqual(code, 2)
+        self.assertIn("could not check [fe80::1]", err)
+        self.assertIn("nothing answered on 1926 and 1925", err)
+        self.assertNotIn("No JointSpace API", err + out)
+        self.assertNotIn("still enabled", err + out)
+        self.assertNotIn("org.droidtv.xtv is still", err + out)
+
     def test_a_refused_port_is_the_tv_answering(self):
         # Nothing listens on 1925, which is what a disabled org.droidtv.xtv looks like: the set itself
         # sent the reset, so the package is worth naming even though 1926 stayed silent.
@@ -164,6 +187,107 @@ class ASilentTVIsNotADisabledPackage(unittest.TestCase):
         self.assertIn("org.droidtv.xtv", out)
 
 
+class AnAddressThisCannotProbe(unittest.TestCase):
+    """A TV_HOST written as tools/tv.py takes it (IP:port), and a URL pasted from a browser.
+
+    Both reach find_api() as the host, and both build a URL that is not one - the address and a port of
+    its own before the 1926 this adds - so the run answered "nothing answered on 1926 and 1925, the set
+    may be off" for an argument it could not use, and an owner whose TV_HOST carries the ADB port went
+    looking at the TV. Neither shape asks a URL now: the address alone is what the check takes.
+    """
+
+    def test_a_tv_host_with_a_port_is_named_before_a_url_is_asked(self):
+        with mock.patch.dict("os.environ", {"TV_HOST": "192.168.1.50:1926"}):
+            code, out, asked, err = run({}, argv=("philips-api.py",))
+        self.assertEqual(code, 2)
+        self.assertEqual(asked, [], "a URL built from IP:port was asked: %s" % asked)
+        self.assertEqual(out, "")
+        self.assertIn("192.168.1.50:1926 carries a port", err)
+        self.assertIn("pass the TV's address alone: 192.168.1.50.", err)
+        self.assertIn("TV_HOST", err)
+        self.assertNotIn("nothing answered", err)
+        self.assertNotIn("off, asleep", err)
+
+    def test_an_address_with_a_port_on_the_command_line_is_the_same_mistake(self):
+        code, out, asked, err = run({}, argv=("philips-api.py", "192.168.1.50:5555"))
+        self.assertEqual(code, 2)
+        self.assertEqual(asked, [])
+        self.assertEqual(out, "")
+        self.assertIn("192.168.1.50:5555 carries a port", err)
+        self.assertIn("pass the TV's address alone: 192.168.1.50.", err)
+
+    def test_a_url_is_named_too(self):
+        for url in ("http://192.168.1.50", "https://tv.local"):
+            with self.subTest(url=url):
+                code, _, asked, err = run({}, argv=("philips-api.py", url))
+                self.assertEqual(code, 2)
+                self.assertEqual(asked, [])
+                self.assertIn(f"{url} is a URL, not the TV's address", err)
+                self.assertIn("without http:// or https://", err)
+
+    def test_an_address_with_colons_that_is_not_a_port_is_still_probed(self):
+        # A bracketed IPv6 address has colons and no port: the guard must leave it to find_api().
+        code, _, asked, _ = run({}, argv=("philips-api.py", "[fe80::1]"))
+        self.assertEqual(code, 2)
+        self.assertEqual(["https://[fe80::1]:1926/6/system", "http://[fe80::1]:1925/6/system"], asked)
+
+    def test_a_colon_with_nothing_after_it_is_named(self):
+        code, out, asked, err = run({}, argv=("philips-api.py", "tv.example:"))
+        self.assertEqual(code, 2)
+        self.assertEqual(asked, [], "a URL built from a trailing colon was asked: %s" % asked)
+        self.assertEqual(out, "")
+        self.assertIn("tv.example: ends in a colon with nothing after it", err)
+        self.assertIn("pass the TV's address alone: tv.example.", err)
+        self.assertNotIn("nothing answered", err)
+        self.assertNotIn("off, asleep", err)
+
+    def test_a_port_that_is_not_a_number_is_named(self):
+        # TV_HOST=192.168.1.50:abc is the shape tools/tv.py refuses as `not a port number`, so an owner
+        # who mistyped it there had no reason to read this check's answer as the argument's fault either.
+        for host in ("tv.example:abc", "tv.example:1926x", "192.168.1.50: ", "tv.example:-1"):
+            with self.subTest(host=host):
+                code, out, asked, err = run({}, argv=("philips-api.py", host))
+                self.assertEqual(code, 2)
+                self.assertEqual(asked, [])
+                self.assertEqual(out, "")
+                self.assertIn(f"what follows the colon in {host} is", err)
+                self.assertIn("not a port number", err)
+                self.assertNotIn("off, asleep", err)
+
+    def test_an_ipv6_address_written_without_brackets_is_named(self):
+        # `https://fe80::1:1926/6/system` is not a URL: the address has to be bracketed before a port
+        # can follow it, which is the form tools/tv.py documents for IPv6 endpoints.
+        code, out, asked, err = run({}, argv=("philips-api.py", "fe80::1"))
+        self.assertEqual(code, 2)
+        self.assertEqual(asked, [])
+        self.assertEqual(out, "")
+        self.assertIn("fe80::1 is an IPv6 address written without brackets", err)
+        self.assertIn("pass it with brackets", err)
+        self.assertIn("[fe80::1]", err)
+        self.assertNotIn("off, asleep", err)
+
+    def test_the_guard_reads_only_a_port_after_the_address(self):
+        for host in ("192.168.1.50", "192.168.1.50.", "tv.local", "[fe80::1]", "tv-1.local"):
+            with self.subTest(host=host):
+                self.assertIsNone(philips_api.address_problem(host))
+        for host in ("192.168.1.50:1926", "tv.local:5555", "[fe80::1]:1926"):
+            with self.subTest(host=host):
+                self.assertIn("carries a port", philips_api.address_problem(host))
+        for host in ("http://192.168.1.50", "https://tv.local", "HTTP://192.168.1.50"):
+            with self.subTest(host=host):
+                self.assertIn("is a URL", philips_api.address_problem(host))
+        self.assertIn("pass the TV's address alone: [fe80::1].",
+                      philips_api.address_problem("[fe80::1]:1926"))
+
+    def test_the_splitter_keeps_a_bracketed_address_whole(self):
+        self.assertEqual(("[fe80::1]", None), philips_api.split_address("[fe80::1]"))
+        self.assertEqual(("[fe80::1]", "1926"), philips_api.split_address("[fe80::1]:1926"))
+        self.assertEqual(("tv.local", "5555"), philips_api.split_address("tv.local:5555"))
+        self.assertEqual(("tv.local", ""), philips_api.split_address("tv.local:"))
+        self.assertEqual(("fe80::1", None), philips_api.split_address("fe80::1"))
+        self.assertEqual(("192.168.1.50", None), philips_api.split_address("192.168.1.50"))
+
+
 class Answered(unittest.TestCase):
     """The one judgement the exit code rests on, over the exceptions the socket layer hands over."""
 
@@ -177,7 +301,9 @@ class Answered(unittest.TestCase):
         for failure in (TIMEOUT, urllib.error.URLError(TIMEOUT), NO_ROUTE, urllib.error.URLError(NO_ROUTE),
                         NO_NAME, urllib.error.URLError(NO_NAME),
                         PermissionError(errno.EACCES, "Permission denied"),
-                        urllib.error.URLError(PermissionError(errno.EPERM, "Operation not permitted"))):
+                        urllib.error.URLError(PermissionError(errno.EPERM, "Operation not permitted")),
+                        OSError(errno.EINVAL, "Invalid argument"),
+                        urllib.error.URLError(OSError(errno.EINVAL, "Invalid argument"))):
             with self.subTest(failure=type(failure).__name__ + str(getattr(failure, "reason", ""))):
                 self.assertFalse(philips_api.answered(failure))
 
