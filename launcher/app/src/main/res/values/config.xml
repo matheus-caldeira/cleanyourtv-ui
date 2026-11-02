@@ -359,6 +359,11 @@
          whose state the TV cannot be trusted with stays. Off by default: every input is listed. Can also be set
          with "inputs_connected_only" in a theme. -->
     <bool name="inputs_connected_only">false</bool>
+    <!-- Only CEC device rows in the Inputs list show a connection state ("Steam Deck · HDMI 1  Connected"); bare HDMI
+         ports show none. For TVs whose port states land on the wrong port: TCL UnionTV (Android 9) reports the empty
+         HDMI 1 as connected and a device on HDMI 2 nowhere, while its CEC device list stays right. A device without
+         CEC then shows no state at all. Off by default. Can also be set with "inputs_cec_state_only" in a theme. -->
+    <bool name="inputs_cec_state_only">false</bool>
     <!-- Names under every tile, not only the focused one: unfocused names stay dimmed, the focused one is full white.
          With dock_row the band grows down to hold the dock's names too. -->
     <bool name="always_show_names">false</bool>
@@ -377,9 +382,9 @@
          "wallpaper_moods" as an object. -->
     <string name="wallpaper_moods" translatable="false"></string>
     <!-- Hold OK on a tile opens a small menu: Move (picks the tile up for reordering), Remove from Home (only with
-         app_library) and App info. false keeps the old behaviour: holding OK opens the app's App info page.
-         Can also be set with "tile_menu": true in a theme's config.json. -->
-    <bool name="tile_menu">false</bool>
+         app_library) and App info. On by default since 3.3; false keeps the old behaviour: holding OK opens the app's
+         App info page. A theme's config.json can set "tile_menu" either way. -->
+    <bool name="tile_menu">true</bool>
 
     <!-- Grid rows left visible under the dock on the home screen. 0 = dock sits at the very bottom. Tiles shrink if
          the dock, its title and this many rows would not otherwise fit the screen height. -->

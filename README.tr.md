@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/PRESS.md"><img src="docs/card.jpg" alt="407 TV modeli · 106 marka · 31 dil · 572 KB başlatıcı. Yer aldığı yayınlar: TechCrunch, TechRadar, Tom's Guide, Mashable, Android Authority, XDA, FlatpanelsHD, It's FOSS, Phandroid, GIGAZINE, Xataka, WinFuture, Frandroid, Macitynet, Techaeris, TechPP ve 396 yayın daha: 54 ülkeden 412 makale. Önce: sponsorlu reklam içeren standart Google TV ana ekranı. Sonra: Clean Your TV başlatıcısı." width="800"></a>
+  <a href="docs/PRESS.md"><img src="docs/card.jpg" alt="416 TV modeli · 106 marka · 31 dil · 572 KB başlatıcı. Yer aldığı yayınlar: TechCrunch, TechRadar, Tom's Guide, Mashable, Android Authority, XDA, FlatpanelsHD, It's FOSS, Phandroid, GIGAZINE, Xataka, WinFuture, Frandroid, Macitynet, Techaeris, TechPP ve 396 yayın daha: 54 ülkeden 412 makale. Önce: sponsorlu reklam içeren standart Google TV ana ekranı. Sonra: Clean Your TV başlatıcısı." width="800"></a>
 </p>
 
 ## Buradan başlayın
@@ -29,7 +29,7 @@
 |---|---|
 | **Bir Android TV veya Google TV** | [Hızlı başlangıç](#hızlı-başlangıç): işi yaklaşık on beş dakikada bir kodlama asistanı yapar. |
 | **Samsung, LG, Roku, Vizio veya Hisense VIDAA bir TV** | [cleanyour.tv/not-android](https://cleanyour.tv/not-android): CleanYourTV orada çalışamaz, ancak takibi kumandanızla kapatabilirsiniz. |
-| **Yalnızca bir Android telefon** | Topluluk tarafından geliştirilen [Clean Your TV uygulaması](https://cleanyour.tv/app): dizüstü bilgisayar yok, kodlama asistanı yok. |
+| **Telefon veya dizüstü bilgisayar, kodlama asistanı yok** | Android telefonlar, Mac ve Windows için bağımsız geliştiricilerin yaptığı [topluluk uygulamalarından](https://cleanyour.tv/app) biri. |
 | **Önce görmek istiyorum** | [Neler elde edersiniz](#neler-elde-edersiniz): yeni ana ekranın ekran görüntüleri. |
 
 **Resmî bağlantılar:** [cleanyour.tv](https://cleanyour.tv) ve bu depo. Bu adı kullanan diğer alan adları,
@@ -64,7 +64,7 @@ kendisinin bulmasını ve kullanıyor olabileceğiniz bir şeye dokunmadan önce
 |---|---|
 | **Bir bilgisayar** | İstemi bir kodlama asistanıyla kullanın: aşağıdaki üç adım. |
 | **Bir bilgisayar, ama kodlama asistanı yok** | Üç adımı kendiniz çalıştırın: komutlar [Elle yapmak](#elle-yapmak) bölümünde. |
-| **Yalnızca bir Android telefon** | [@udhaykumarbala](https://github.com/udhaykumarbala) tarafından geliştirilen topluluk uygulaması [Clean Your TV](https://cleanyour.tv/app)'yi kullanın: bağlan, analiz et, temizle, yaklaşık beş dakikada. Dizüstü bilgisayar yok, kodlama asistanı yok. |
+| **Telefon veya dizüstü bilgisayar, kodlama asistanı yok** | [Topluluk uygulamalarından](https://cleanyour.tv/app) birini seçin: bu TV listeleri üzerine bağımsız geliştiricilerin yaptığı ücretsiz, açık kaynaklı uygulamalar. |
 
 Aşağıdaki üç adım bir kodlama asistanı için yazılmıştır: bilgisayarın TV ile aynı Wi-Fi ağında olması,
 üzerinde bir kabuk (shell), Python 3, 17 ile 22 arası bir JDK ve build-tools 34 ile birlikte Android SDK
@@ -113,7 +113,7 @@ analitik yok, hiç istemediğiniz uygulamalar yok.
 | ![Aurora teması: yeniden derlemeden gönderilen bir duvar kâğıdı ve renk tonlu düğmeler](themes/aurora/screenshot.jpg) | ![Bir temanın config.json dosyasından altı sütun ve altı uygulamalık dock](themes/six-columns/screenshot.jpg) |
 | *`tools/theme.sh` ile gönderilen Aurora teması* | *Altı sütun ve altı uygulamalık dock, aynı başlatıcı* |
 | ![Bir kutucuğu taşımak: OK basılı tutuldu, Taşı seçildi, kutucuk alındı ve diğerleri soluklaştı](docs/tile-move.jpg) | ![Uygulama kitaplığı: yüklü uygulamalar, tek basışla bir uygulama Ana ekrana geri eklenir](docs/app-library.jpg) |
-| *`tile_menu` ile bir kutucukta OK'u basılı tutun, Taşı: oklar onu taşır, Geri yerine bırakır* | *Uygulama kitaplığı: tek basış, kaldırılmış bir uygulamayı Ana ekrana geri koyar* |
+| *Bir kutucukta OK'u basılı tutun, Taşı: oklar onu taşır, Geri yerine bırakır* | *Uygulama kitaplığı: tek basış, kaldırılmış bir uygulamayı Ana ekrana geri koyar* |
 
 ## Desteklenen TV'ler
 
@@ -133,17 +133,17 @@ içindedir. En çok listesi olan markalar, her biri web sitesindeki modellerine 
 
 | | | | | | |
 |---|---|---|---|---|---|
-| [TCL](https://cleanyour.tv/tvs?q=TCL) · 81 | [Sony](https://cleanyour.tv/tvs?q=Sony) · 46 | [Xiaomi](https://cleanyour.tv/tvs?q=Xiaomi) · 38 | [Philips](https://cleanyour.tv/tvs?q=Philips) · 21 | [Skyworth](https://cleanyour.tv/tvs?q=Skyworth) · 15 | [Hisense](https://cleanyour.tv/tvs?q=Hisense) · 14 |
-| [SHARP](https://cleanyour.tv/tvs?q=SHARP) · 10 | [Amazon Fire TV](https://cleanyour.tv/tvs?q=Amazon%20Fire%20TV) · 9 | [BenQ](https://cleanyour.tv/tvs?q=BenQ) · 6 | [JVC](https://cleanyour.tv/tvs?q=JVC) · 6 | [Panasonic](https://cleanyour.tv/tvs?q=Panasonic) · 6 | [Haier](https://cleanyour.tv/tvs?q=Haier) · 5 |
-| [OnePlus](https://cleanyour.tv/tvs?q=OnePlus) · 4 | [Thomson](https://cleanyour.tv/tvs?q=Thomson) · 4 | [Toshiba](https://cleanyour.tv/tvs?q=Toshiba) · 4 | [Acer](https://cleanyour.tv/tvs?q=Acer) · 3 | [Google](https://cleanyour.tv/tvs?q=Google) · 3 | [Grundig](https://cleanyour.tv/tvs?q=Grundig) · 3 |
-| [Motorola](https://cleanyour.tv/tvs?q=Motorola) · 3 | [Nokia](https://cleanyour.tv/tvs?q=Nokia) · 3 | [NVIDIA Shield](https://cleanyour.tv/tvs?q=NVIDIA%20Shield) · 3 | [RCA](https://cleanyour.tv/tvs?q=RCA) · 3 | [Redmi](https://cleanyour.tv/tvs?q=Redmi) · 3 | [Vu](https://cleanyour.tv/tvs?q=Vu) · 3 |
-| [Artel](https://cleanyour.tv/tvs?q=Artel) · 2 | [CHiQ](https://cleanyour.tv/tvs?q=CHiQ) · 2 | [EKO](https://cleanyour.tv/tvs?q=EKO) · 2 | [FFalcon](https://cleanyour.tv/tvs?q=FFalcon) · 2 | [Hitachi](https://cleanyour.tv/tvs?q=Hitachi) · 2 | [Insignia Fire TV](https://cleanyour.tv/tvs?q=Insignia%20Fire%20TV) · 2 |
+| [TCL](https://cleanyour.tv/tvs?q=TCL) · 81 | [Sony](https://cleanyour.tv/tvs?q=Sony) · 46 | [Xiaomi](https://cleanyour.tv/tvs?q=Xiaomi) · 41 | [Philips](https://cleanyour.tv/tvs?q=Philips) · 22 | [Skyworth](https://cleanyour.tv/tvs?q=Skyworth) · 15 | [Hisense](https://cleanyour.tv/tvs?q=Hisense) · 14 |
+| [SHARP](https://cleanyour.tv/tvs?q=SHARP) · 10 | [Amazon Fire TV](https://cleanyour.tv/tvs?q=Amazon%20Fire%20TV) · 9 | [Panasonic](https://cleanyour.tv/tvs?q=Panasonic) · 7 | [BenQ](https://cleanyour.tv/tvs?q=BenQ) · 6 | [Haier](https://cleanyour.tv/tvs?q=Haier) · 6 | [JVC](https://cleanyour.tv/tvs?q=JVC) · 6 |
+| [Acer](https://cleanyour.tv/tvs?q=Acer) · 4 | [OnePlus](https://cleanyour.tv/tvs?q=OnePlus) · 4 | [Thomson](https://cleanyour.tv/tvs?q=Thomson) · 4 | [Toshiba](https://cleanyour.tv/tvs?q=Toshiba) · 4 | [Google](https://cleanyour.tv/tvs?q=Google) · 3 | [Grundig](https://cleanyour.tv/tvs?q=Grundig) · 3 |
+| [Motorola](https://cleanyour.tv/tvs?q=Motorola) · 3 | [Nokia](https://cleanyour.tv/tvs?q=Nokia) · 3 | [NVIDIA Shield](https://cleanyour.tv/tvs?q=NVIDIA%20Shield) · 3 | [onn](https://cleanyour.tv/tvs?q=onn) · 3 | [RCA](https://cleanyour.tv/tvs?q=RCA) · 3 | [Redmi](https://cleanyour.tv/tvs?q=Redmi) · 3 |
+| [Vu](https://cleanyour.tv/tvs?q=Vu) · 3 | [Artel](https://cleanyour.tv/tvs?q=Artel) · 2 | [CHiQ](https://cleanyour.tv/tvs?q=CHiQ) · 2 | [EKO](https://cleanyour.tv/tvs?q=EKO) · 2 | [FFalcon](https://cleanyour.tv/tvs?q=FFalcon) · 2 | [Hitachi](https://cleanyour.tv/tvs?q=Hitachi) · 2 |
 
 <details>
 <summary>+62 more brands and 14 projector brands</summary>
 
-**Kalley** 2 · **Kogan** 2 · **Master-G** 2 · **onn** 2 · **PRISM+** 2 · **RockTek** 2 · **Sankey** 2 · **Sber** 2 ·
-**Síragon** 2 · **Vidda** 2 ·
+**Insignia Fire TV** 2 · **Kalley** 2 · **Kogan** 2 · **Master-G** 2 · **PRISM+** 2 · **RockTek** 2 · **Sankey** 2 ·
+**Sber** 2 · **Síragon** 2 · **Vidda** 2 ·
 AiPro2K · AIWA · AQUA · ASUS · Beko · Bell Canada · BGH · Caxium · Cecotec · Challenger · Compac · Dcolor · DEXP ·
 Dialog · DYON · Freebox · Hikeen · Home+ · Impex · INCLO · Karbonn · Koryo · KTC · Liberton · Lumio · LYNCAST ·
 Magyar Telekom · MarQ · MECOOL · MTC · Next · Noblex · OK. · OPPO · Panavox · PEAQ · Polytron · PPTV · Prosonic ·
@@ -281,10 +281,10 @@ bir cihazda neyin kaldığı [Sorun giderme](docs/TROUBLESHOOTING.md) belgesinde
 |---|---|
 | **Yapılandırma** | Dock sırası, gizli uygulamalar, Canlı TV uygulaması, satır başına 4 ile 7 arası kutucuk, azaltılmış hareket. Hepsi [`config.xml`](launcher/app/src/main/res/values/config.xml) içinde |
 | **TV'deki ayarlar** | Başlatıcı ayarları için Ayarlar üzerinde OK'u basılı tutun. İsteğe bağlı `launcher_settings_button`, normal bir tıklamanın onları doğrudan açmasını sağlar; TV ayarları ayarlar sayfasında ve kendi uygulama kutucuğunda kalır. |
-| **Temalar** | Wi-Fi üzerinden gönderilen bir `config.json` ile arka plan, duvar kâğıdı ve düzen, yeniden derleme yok. Yerleşik `default/` dahil 16 tema [`themes/`](themes/) içinde gelir |
+| **Temalar** | Wi-Fi üzerinden gönderilen bir `config.json` ile arka plan, duvar kâğıdı ve düzen, yeniden derleme yok. Yerleşik `default/` dahil 17 tema [`themes/`](themes/) içinde gelir |
 | **31 dil** | TV'nin diline uyar; İbranice için tamamen aynalanmış, sağdan sola bir düzen sunar |
 | **Uygulama kitaplığı** | İsteğe bağlı: yüklü tüm uygulamalara göz atın ve Ana ekran kısayolları ekleyin veya kaldırın. Bkz. [uygulama kitaplığı kılavuzu](docs/app-library.md) |
-| **Kutucuk menüsü** | İsteğe bağlı (`tile_menu`): Taşı, Ana ekrandan kaldır ve Uygulama bilgisi için bir kutucukta OK'u basılı tutun. Kapalıyken OK'u basılı tutmak Uygulama bilgisini açar |
+| **Kutucuk menüsü** | Varsayılan olarak açık (`tile_menu`): Taşı, Ana ekrandan kaldır ve Uygulama bilgisi için bir kutucukta OK'u basılı tutun. Kapalıyken OK'u basılı tutmak Uygulama bilgisini açar |
 | **Modül kartları** | Herhangi bir TV uygulaması kendi kutucuğunu sunabilir; her birini bir kez onaylarsınız. Bkz. [`docs/modules.md`](docs/modules.md) |
 | **Eklentiler** | Modül kartı olarak bağlanan isteğe bağlı uygulamalar; [`addons/`](addons/) içinde tutulur ve asla başlatıcıya derlenmez |
 | **Saat ekran koruyucusu** | Ekran izi kalmasın diye ışıltının üzerinde kayan bir saat |
@@ -346,10 +346,20 @@ Başımıza gelen her şeyin tam listesi [docs/TROUBLESHOOTING.md](docs/TROUBLES
 <details>
 <summary><b>Kod yazmayı bilmiyorum ve dizüstü bilgisayarım yok. Yine de yapabilir miyim?</b></summary>
 
-Evet. [@udhaykumarbala](https://github.com/udhaykumarbala), aynı temizliği Wi-Fi üzerinden yapan, Android için
-ücretsiz ve açık kaynaklı bir [telefon uygulaması](https://cleanyour.tv/app) geliştirdi: TV'ye bağlanır, önce bir plan
-gösterir, bir geri yükleme noktası kaydeder ve yalnızca uygulamaları devre dışı bırakır; böylece her şey geri alınabilir.
-Topluluk tarafından geliştirilmiştir.
+Evet. Bağımsız geliştiriciler, CleanYourTV'nin TV listeleri üzerine aynı temizliği Wi-Fi üzerinden kodlama asistanı
+olmadan yapan ücretsiz, açık kaynaklı uygulamalar geliştirdi. Her biri önce bir plan gösterir, yalnızca uygulamaları
+devre dışı bırakır ve her şeyi geri alabilir:
+
+| Uygulama | Platform | Geliştiren |
+|---|---|---|
+| [Clean Your TV app](https://github.com/udhaykumarbala/cleanyourtv-app) | Android telefon | [@udhaykumarbala](https://github.com/udhaykumarbala) |
+| [Tellyscope](https://github.com/man15h/tellyscope) | Android telefon | [@man15h](https://github.com/man15h) |
+| [TidyTV](https://github.com/jolan94/tidytv) | Android telefon, Google Play | [@jolan94](https://github.com/jolan94) |
+| [CleanMyTV](https://github.com/wingedpanther/cleanmytv) | Mac ve Windows | [@wingedpanther](https://github.com/wingedpanther) |
+
+Bu uygulamalar bağımsız projelerdir; CleanYourTV veya bakımcısıyla bağlantılı değildir ve onlar tarafından
+onaylanmamıştır. Her biri kendi lisansıyla, olduğu gibi sunulur. Bir uygulamayla ilgili sorunları o uygulamanın deposuna
+bildirin. Daha fazlası: [cleanyour.tv/app](https://cleanyour.tv/app).
 
 </details>
 
@@ -470,7 +480,7 @@ ulaştı, insanlar aynısını kendi TV'lerine yapmaya başladı ve yanıtları 
 bağlantılar çalışır.
 
 İki hafta sonra, 19–25 Ekim haftasında GitHub'ın 1 numaralı trend deposu oldu; 46 binden fazla yıldız, 5,7 bin
-fork, 14 günde 1,4 milyon görüntülenme ve 260 bin klon. Listeler artık 407 TV modelini ve 106 markayı kapsıyor.
+fork, 14 günde 1,4 milyon görüntülenme ve 260 bin klon. Listeler artık 416 TV modelini ve 106 markayı kapsıyor.
 Basındaki karşılığı: 412 makale (54 ülkeden) ve YouTube ile Bilibili'de 229 video, hepsi [docs/PRESS.md](docs/PRESS.md)
 içinde (rakamlar 30 Ekim 2026 itibarıyla).
 
