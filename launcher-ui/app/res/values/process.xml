@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The process Screensaver runs in: :home, with the home screen, as on Android 9 and 10. Only Android's version may
+     vary it (values-vNN): if it also varied by language or screen, the system would ignore it and use the main process. -->
+<resources>
+    <string name="dream_process" translatable="false">:home</string>
+</resources>
