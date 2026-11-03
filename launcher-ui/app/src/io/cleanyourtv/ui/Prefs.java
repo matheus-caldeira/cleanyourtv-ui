@@ -237,6 +237,12 @@ final class Prefs {
     static boolean showAllProviders() { return sp().getBoolean("showAllProviders", false); }
     static void setShowAllProviders(boolean on) { put("showAllProviders", on); }
 
+    // MARK: - Trailer player
+
+    /** The app the Trailer button opens, or "" for the built-in pick (YouTube, then another YouTube-capable player). */
+    static String trailerPlayer() { return sp().getString("trailerPlayer", ""); }
+    static void setTrailerPlayer(String pkg) { put("trailerPlayer", pkg == null ? "" : pkg); }
+
     // MARK: - Remote buttons
 
     // The key service runs in its own small process (:keys), so that a busy home screen can never delay the TV's keys.
