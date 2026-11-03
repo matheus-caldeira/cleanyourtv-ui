@@ -1,0 +1,9 @@
+{
+  "remote": "TCL remote (G05_4K_GB board)",
+  "device": "Vendor_3697_Product_0001 (IR receiver), TCL Smart TV Pro (G05)",
+  "note": "Scancodes are KeyEvent.getScanCode() as seen by an accessibility key filter (`RemoteKeyService`), not the raw MSC_SCAN from `getevent -lt` - on this board the two differ (gear: MSC_SCAN 0xf30/3888, but KeyEvent.getScanCode() 561, keyCode 4077; TV: MSC_SCAN 0x16d, but KeyEvent.getScanCode() 365, keyCode 4001). The gear scancode matches the same board's note in docs/devices/tcl-55c728-g05-4k-gb.md. Native buttons are listed for reference and never intercepted.",
+  "buttons": [
+    { "name": "Gear", "scan": 561, "label": "KEYCODE_4077", "kind": "configurable", "default": "settings" },
+    { "name": "Live TV", "scan": 365, "label": "KEYCODE_4001", "kind": "configurable", "default": "live" }
+  ]
+}
