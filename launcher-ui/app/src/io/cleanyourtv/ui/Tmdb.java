@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * The TMDB API for Explore, the title page and the account (watchlist, ratings). Answers are kept for ten minutes.
+ * The TMDB API for Explore, the title page and the account (watchlist, ratings). Answers are kept (see ttl()); lists for LIST_TTL, until Explore is reloaded.
  * The account is TMDB's v3 session: a request token the person approves on their phone, then a session id kept in
  * the app's settings. Without an account, "My list" and "Seen" are kept on the TV.
  */
@@ -34,11 +34,17 @@ final class Tmdb {
             LOGO = "https://image.tmdb.org/t/p/w92", PROFILE = "https://image.tmdb.org/t/p/w185";
     /** In memory: the answers of the last half hour, a few dozen; on disk (DISK_MAX): for as long as ttl() says. */
     private static final long TTL = 30 * 60_000L, DISK_MAX = 24L * 1024 * 1024;
+    /** Lists (trending, discover, the top 10…) stay the same this long, so Explore doesn't change under the person. */
+    static final long LIST_TTL = 6 * 3600_000L;
 
+    /** {loaded into memory at, fetched from TMDB at, answer}. */
     private static final Map<String, Object[]> CACHE = new LinkedHashMap<String, Object[]>(64, 0.75f, true) {
         @Override protected boolean removeEldestEntry(Map.Entry<String, Object[]> e) { return size() > 60; }
     };
     private static java.io.File disk;
+    private static android.content.SharedPreferences cachePrefs;
+    /** Lists fetched before this are old: the person asked Explore to reload (Tmdb.refreshLists). */
+    private static volatile long listsSince;
 
     /** The disk cache's folder (every process calls this; it only remembers the folder). */
     static synchronized void init(Context c) {
@@ -46,7 +52,29 @@ final class Tmdb {
         disk = new java.io.File(c.getApplicationContext().getCacheDir(), "tmdb");
         //noinspection ResultOfMethodCallIgnored
         disk.mkdirs();
+        cachePrefs = c.getApplicationContext().getSharedPreferences("tmdb_cache", Context.MODE_PRIVATE);
+        listsSince = cachePrefs.getLong("lists_since", 0);
         new Thread(Tmdb::prune, "tmdb-prune").start();
+    }
+
+    /** Explore's "reload from scratch": every list is asked of TMDB again (the old copies stay on disk for offline). */
+    static void refreshLists() {
+        long now = System.currentTimeMillis();
+        listsSince = now;
+        if (cachePrefs != null) cachePrefs.edit().putLong("lists_since", now).apply();
+        synchronized (CACHE) { CACHE.keySet().removeIf(Tmdb::isList); }
+    }
+
+    /** What's trending, new, airing or recommended: what changes during the day. */
+    private static boolean isList(String path) {
+        return path.startsWith("/trending/") || path.startsWith("/discover/") || path.contains("/now_playing")
+                || path.contains("/upcoming") || path.contains("/airing_today") || path.contains("/on_the_air")
+                || path.contains("/recommendations") || path.contains("/popular");
+    }
+
+    /** An answer fetched at `fetched` is still good for `full`. */
+    private static boolean fresh(String full, long fetched, long now) {
+        return now - fetched < ttl(full) && !(isList(full) && fetched < listsSince);
     }
 
     static boolean hasKey() { return !Prefs.tmdbKey().isEmpty(); }
@@ -79,9 +107,7 @@ final class Tmdb {
     private static long ttl(String path) {
         if (path.contains("session_id")) return 0;
         if (path.startsWith("/search/")) return 3600_000L;
-        if (path.startsWith("/trending/") || path.startsWith("/discover/") || path.contains("/now_playing")
-                || path.contains("/upcoming") || path.contains("/airing_today") || path.contains("/on_the_air")
-                || path.contains("/recommendations")) return 3 * 3600_000L;
+        if (isList(path)) return LIST_TTL;
         if (path.contains("/images") || path.startsWith("/person/") || path.startsWith("/collection/")
                 || path.contains("/season/") || path.startsWith("/watch/providers") || path.contains("/top_rated")) return 7 * 24 * 3600_000L;
         return 12 * 3600_000L;
@@ -96,14 +122,14 @@ final class Tmdb {
         long now = System.currentTimeMillis();
         synchronized (CACHE) {
             Object[] hit = CACHE.get(full);
-            if (hit != null && now - (Long) hit[0] < TTL) return (JSONObject) hit[1];
+            if (hit != null && now - (Long) hit[0] < TTL && fresh(full, (Long) hit[1], now)) return (JSONObject) hit[2];
         }
         long ttl = ttl(full);
         java.io.File f = disk == null || ttl == 0 ? null : new java.io.File(disk, Integer.toHexString(full.hashCode()) + "-" + full.length() + ".json");
-        if (f != null && f.isFile() && now - f.lastModified() < ttl) {
+        if (f != null && f.isFile() && fresh(full, f.lastModified(), now)) {
             try {
                 JSONObject o = new JSONObject(readAll(new java.io.FileInputStream(f)));
-                synchronized (CACHE) { CACHE.put(full, new Object[] {now, o}); }
+                synchronized (CACHE) { CACHE.put(full, new Object[] {now, f.lastModified(), o}); }
                 return o;
             } catch (IOException | JSONException ignored) {
             }
@@ -118,7 +144,7 @@ final class Tmdb {
             throw e;
         }
         JSONObject o = new JSONObject(text);
-        synchronized (CACHE) { CACHE.put(full, new Object[] {now, o}); }
+        synchronized (CACHE) { CACHE.put(full, new Object[] {now, now, o}); }
         if (f != null) {
             try (java.io.FileOutputStream out = new java.io.FileOutputStream(f)) {
                 out.write(text.getBytes(StandardCharsets.UTF_8));
