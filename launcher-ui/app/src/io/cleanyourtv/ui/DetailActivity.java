@@ -595,20 +595,33 @@ public class DetailActivity extends Activity {
         return null;
     }
 
-    /** YouTube for TV in its own task (started as part of ours, it closes as soon as the video opens). */
+    /** The player picked in Settings > Services > Trailers de Filmes e Séries, when it's still installed; otherwise the official
+     *  YouTube (the project's current default), else whichever other YouTube-capable player is found (SmartTube and
+     *  the like) - in its own task (started as part of ours, it closes as soon as the video opens). */
     private void playTrailer(String key) {
-        Intent youtube = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + key))
-                .setPackage("com.google.android.youtube.tv")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Uri url = Uri.parse("https://www.youtube.com/watch?v=" + key);
+        String picked = Prefs.trailerPlayer();
+        String pkg = Providers.installed(this, picked) ? picked : automaticTrailerPlayer();
+        Intent app = pkg == null ? new Intent(Intent.ACTION_VIEW, url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                : new Intent(Intent.ACTION_VIEW, url).setPackage(pkg)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         try {
-            startActivity(youtube);
+            startActivity(app);
         } catch (Exception e) {
             try {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + key)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                startActivity(new Intent(Intent.ACTION_VIEW, url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             } catch (Exception ignored) {
-                Toast.makeText(this, Ui.tr("O YouTube não está instalado.", "YouTube isn't installed."), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, Ui.tr("Nenhum app para abrir o trailer.", "No app to open the trailer."), Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    /** YouTube first (the project's current default), else the first other YouTube-capable player found, else null
+     *  - which sends the caller to a plain view intent, with no package forced. */
+    private String automaticTrailerPlayer() {
+        if (Providers.installed(this, "com.google.android.youtube.tv")) return "com.google.android.youtube.tv";
+        List<String> players = Providers.youtubePlayers(this);
+        return players.isEmpty() ? null : players.get(0);
     }
 
     private boolean stopped;

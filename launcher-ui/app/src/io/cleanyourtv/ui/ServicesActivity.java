@@ -61,6 +61,7 @@ public class ServicesActivity extends Activity {
                 "Pick the app that opens each service. Picks and Explore only use services with an app, unless you show them all."));
         sub.setPadding(0, Math.round(12 * k), 0, Math.round(26 * k));
         list.addView(sub);
+        list.addView(row("trailer", null, Ui.tr("Trailers de Filmes e Séries", "Movie & TV Trailers"), trailerPlayerValue(), v -> pickTrailerPlayer(providers)));
         list.addView(row("all", null, Ui.tr("Mostrar todos os serviços", "Show every service"),
                 Prefs.showAllProviders() ? Ui.tr("Ligado", "On") : Ui.tr("Desligado", "Off"), v -> {
                     Prefs.setShowAllProviders(!Prefs.showAllProviders());
@@ -94,6 +95,31 @@ public class ServicesActivity extends Activity {
         String app = Providers.app(this, p.id, p.name);
         if (app == null) return Ui.tr("Sem app na TV", "No app on the TV");
         return (pick.isEmpty() ? Ui.tr("Automático · ", "Automatic · ") : "") + Providers.label(this, app);
+    }
+
+    private String trailerPlayerValue() {
+        String picked = Prefs.trailerPlayer();
+        if (!picked.isEmpty() && Providers.installed(this, picked)) return Providers.label(this, picked);
+        return Ui.tr("Automático", "Automatic");
+    }
+
+    private void pickTrailerPlayer(List<Providers.Provider> providers) {
+        List<String> values = new ArrayList<>(), labels = new ArrayList<>();
+        values.add("");
+        labels.add(Ui.tr("Automático", "Automatic"));
+        for (String pkg : Providers.youtubePlayers(this)) {
+            values.add(pkg);
+            labels.add(Providers.label(this, pkg));
+        }
+        String current = Prefs.trailerPlayer();
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(Ui.tr("Trailers de Filmes e Séries", "Movie & TV Trailers"))
+                .setSingleChoiceItems(labels.toArray(new String[0]), Math.max(0, values.indexOf(current)), (d, which) -> {
+                    Prefs.setTrailerPlayer(values.get(which));
+                    d.dismiss();
+                    build(providers);
+                })
+                .show();
     }
 
     private void pick(Providers.Provider p, List<Providers.Provider> providers) {
