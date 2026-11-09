@@ -55,8 +55,10 @@ import java.util.concurrent.Executors;
  * it, Right or Back closes it). The menu starts with Explore and its settings button, then Search, Home and My list;
  * the rest is the person's to order or hide in Settings. The background is the focused title's picture, softly
  * blurred. With EXTRA_SECTION = "watchlist" (the remote's bookmark button) it opens on My list.
+ * Lists stay the same for Tmdb.LIST_TTL; Up twice at the top of a page reloads it from TMDB (Tmdb.refreshLists).
+ * Holding OK on a title opens TitleMenu (seen, My list, favorites, lists).
  */
-public class ExploreActivity extends Activity {
+public class ExploreActivity extends Activity implements TitleMenu.Host {
     static final String EXTRA_SECTION = "section";
     private static final String HOME = "home", SEARCH = "search", LIST = "watchlist", TOP = "top", MOVIES = "movie",
             SHOWS = "tv", KIDS = "kids", ANIME = "anime", CATS = "categories", SETTINGS = "settings", SERVICE = "service:",
@@ -149,6 +151,7 @@ public class ExploreActivity extends Activity {
             return this;
         }
 
+        /** A list the person keeps (My list, favorites, ratings): asked again when they come back or change a title. */
         Section personal() {
             personal = true;
             return this;
@@ -237,6 +240,8 @@ public class ExploreActivity extends Activity {
         scroll.addView(page);
         root.addView(scroll, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.addView(burger(), burgerParams());
+        root.addView(pullHint(), new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.CENTER_HORIZONTAL));
         shade = new View(this);
         shade.setBackgroundColor(0xB3000000);
         shade.setAlpha(0);
@@ -529,6 +534,10 @@ public class ExploreActivity extends Activity {
         keyAt = android.os.SystemClock.uptimeMillis();
         int code = e.getKeyCode();
         boolean down = e.getAction() == KeyEvent.ACTION_DOWN;
+        if (down && code != KeyEvent.KEYCODE_DPAD_UP && pullAt != 0) {
+            pullAt = 0;
+            hidePullHint();
+        }
         if (overlay != null) {
             if (code == KeyEvent.KEYCODE_BACK) {
                 if (!down) closeOverlay();
@@ -548,6 +557,13 @@ public class ExploreActivity extends Activity {
                 if (next == null || !inside(next, menu)) return true;
             }
             return super.dispatchKeyEvent(e);
+        }
+        if (code == KeyEvent.KEYCODE_DPAD_UP && Tmdb.hasKey() && !SETTINGS.equals(current)) {
+            View f = getCurrentFocus();
+            if (f != null && inside(f, page) && f.focusSearch(View.FOCUS_UP) == null) {   // already at the top
+                if (down && e.getRepeatCount() == 0) pulled();
+                return true;
+            }
         }
         if (code == KeyEvent.KEYCODE_DPAD_LEFT && down && Tmdb.hasKey()) {
             View f = getCurrentFocus();
@@ -675,6 +691,63 @@ public class ExploreActivity extends Activity {
         list.removeIf(x -> x.equalsIgnoreCase(q.trim()));
         list.add(0, q.trim());
         writeList("recent", list.size() > 10 ? new ArrayList<>(list.subList(0, 10)) : list);
+    }
+
+    // MARK: - Reload: Up twice at the top of the page
+
+    private static final long PULL_MS = 2500;
+    private TextView pullHint;
+    private long pullAt;
+    private final Runnable pullGone = this::hidePullHint;
+
+    private View pullHint() {
+        pullHint = TvUi.text(this, k, 26, Ui.medium, 0xFF14161A);
+        pullHint.setPadding(Math.round(34 * k), Math.round(16 * k), Math.round(34 * k), Math.round(16 * k));
+        pullHint.setBackground(TvUi.round(TvUi.INK, 40 * k));
+        pullHint.setElevation(20 * k);
+        pullHint.setAlpha(0);
+        pullHint.setVisibility(View.GONE);
+        pullHint.setTranslationY(36 * k);
+        return pullHint;
+    }
+
+    /** First Up at the top: a hint; a second one soon after: the page again, every list asked of TMDB anew. */
+    private void pulled() {
+        long now = android.os.SystemClock.uptimeMillis();
+        if (pullAt != 0 && now - pullAt < PULL_MS) {
+            pullAt = 0;
+            Tmdb.refreshLists();
+            flashPullHint(Ui.tr("Atualizando…", "Refreshing…"), 1400);
+            showPage(current);
+            return;
+        }
+        pullAt = now;
+        flashPullHint(Ui.tr("Aperte ↑ de novo para atualizar", "Press ↑ again to refresh"), PULL_MS);
+    }
+
+    private void flashPullHint(String text, long ms) {
+        pullHint.setText(text);
+        pullHint.setVisibility(View.VISIBLE);
+        pullHint.animate().alpha(1).translationY(48 * k).setDuration(160).start();
+        main.removeCallbacks(pullGone);
+        main.postDelayed(pullGone, ms);
+    }
+
+    private void hidePullHint() {
+        main.removeCallbacks(pullGone);
+        if (pullHint == null || pullHint.getVisibility() != View.VISIBLE) return;
+        pullHint.animate().alpha(0).translationY(36 * k).setDuration(200)
+                .withEndAction(() -> { if (pullHint.getAlpha() == 0) pullHint.setVisibility(View.GONE); }).start();
+    }
+
+    /**
+     * TitleMenu changed a title. Seen: only the badges (TitleMenu) and the banner's line change, nothing reloads; My
+     * list or favorites: those rows, the focus staying on the same poster.
+     */
+    @Override public void titleChanged(boolean lists) {
+        if (!Tmdb.hasKey()) return;
+        if (lists || LIST.equals(current)) refreshPersonal();   // My list's tabs include "Seen"
+        if (hero != null && !heroList.isEmpty()) showHeroMeta();
     }
 
     // MARK: - Pages
@@ -810,9 +883,17 @@ public class ExploreActivity extends Activity {
         placedKeys.put(slot, keys.toString());
         View old = placed.remove(slot);
         boolean hadFocus = old != null && old.hasFocus();
+        // Where the focus was in the old row: its title, and its place (to land near it if the title is gone).
+        View was = hadFocus ? getCurrentFocus() : null;
+        Tmdb.Title wasTitle = TvUi.titleOf(was);
+        int wasAt = hadFocus ? cards(old).indexOf(was) : -1, oldAt = old != null ? rows.indexOfChild(old) : -1;
         if (old != null) rows.removeView(old);
-        if (titles.isEmpty()) {
-            if (hadFocus) focusPage();
+        if (titles.isEmpty()) {   // the row is gone: the focus goes to the row that took its place, not to the top
+            if (hadFocus) {
+                View next = oldAt >= 0 && oldAt < rows.getChildCount() ? rows.getChildAt(oldAt)
+                        : rows.getChildCount() > 0 ? rows.getChildAt(rows.getChildCount() - 1) : null;
+                if (next == null || next == status || !next.requestFocus()) focusPage();
+            }
             return;
         }
         View view = s.ranked ? ranked(s, titles) : TvUi.row(this, k, s.title, titles, this::open, moreOf(s), Math.round(INSET * k));
@@ -822,8 +903,34 @@ public class ExploreActivity extends Activity {
             if (e.getKey() < slot && e.getValue().getParent() == rows) index = Math.max(index, rows.indexOfChild(e.getValue()) + 1);
         }
         rows.addView(view, Math.min(index, rows.getChildCount()));
+        if (hadFocus) {   // the same poster in the new row, else the one now in its place
+            List<View> now = cards(view);
+            View same = null;
+            for (View c : now) if (wasTitle != null && TvUi.titleOf(c) != null && TvUi.titleOf(c).key().equals(wasTitle.key())) same = c;
+            if (same == null && !now.isEmpty()) same = now.get(wasAt < 0 ? now.size() - 1 : Math.min(wasAt, now.size() - 1));
+            if (same == null || !same.requestFocus()) focusPage();
+            return;
+        }
         View focus = getCurrentFocus();
-        if (hadFocus || (!menuOpen && overlay == null && (focus == null || !inside(focus, page)))) focusPage();
+        if (!menuOpen && overlay == null && (focus == null || !inside(focus, page))) focusPage();
+    }
+
+    /** The posters under `v`, in order (each card carries its title as the tag). */
+    private static List<View> cards(View v) {
+        List<View> out = new ArrayList<>();
+        collectCards(v, out);
+        return out;
+    }
+
+    private static void collectCards(View v, List<View> out) {
+        if (v.getTag() instanceof Tmdb.Title && v.isFocusable()) {
+            out.add(v);
+            return;
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) collectCards(g.getChildAt(i), out);
+        }
     }
 
     private Runnable moreOf(Section s) {
@@ -977,6 +1084,8 @@ public class ExploreActivity extends Activity {
                 if (quiet && keys.toString().equals(tabKeys)) return;
                 tabKeys = keys.toString();
                 boolean hadFocus = tabBody.hasFocus();
+                View was = hadFocus ? getCurrentFocus() : null;
+                int wasAt = was == null ? -1 : cards(tabBody).indexOf(was);
                 tabBody.removeAllViews();
                 if (why != null || got.isEmpty()) {
                     tabBody.addView(note(why != null ? why : Ui.tr("Nada aqui ainda. Abra um título para marcar.", "Nothing here yet. Open a title to add it.")));
@@ -985,6 +1094,7 @@ public class ExploreActivity extends Activity {
                     TvUi.Grid grid = new TvUi.Grid(this, k, 7, this::open);
                     grid.add(got);
                     tabBody.addView(grid);
+                    if (wasAt >= 0 && grid.focusAt(wasAt)) return;   // the poster now in the place of the one focused
                 }
                 if (hadFocus) tabBar.getChildAt(tab).requestFocus();
             });
@@ -1704,6 +1814,11 @@ public class ExploreActivity extends Activity {
         hero.setOnClickListener(v -> {
             if (!heroList.isEmpty()) open((Tmdb.Title) heroList.get(heroAt)[0]);
         });
+        hero.setOnLongClickListener(v -> {   // hold OK: the same menu as a poster's, for the title showing
+            if (heroList.isEmpty()) return false;
+            TitleMenu.show(this, heroButton, (Tmdb.Title) heroList.get(heroAt)[0]);
+            return true;
+        });
         hero.setOnKeyListener((v, code, e) -> {
             boolean right = code == KeyEvent.KEYCODE_DPAD_RIGHT, back = code == KeyEvent.KEYCODE_DPAD_LEFT && heroAt > 0;
             if ((!right && !back) || heroList.size() < 2) return false;
@@ -1773,12 +1888,7 @@ public class ExploreActivity extends Activity {
         heroTitle.setText(t.name);
         heroTitle.setVisibility(View.VISIBLE);
         heroLogo.setVisibility(View.GONE);
-        List<String> meta = new ArrayList<>();
-        meta.add(t.kind.equals("movie") ? Ui.tr("Filme", "Movie") : Ui.tr("Série", "Show"));
-        if (!t.year.isEmpty()) meta.add(t.year);
-        if (t.vote > 0) meta.add(String.format(Ui.PT, "★ %.1f", t.vote));
-        if (Tmdb.isSeen(this, t.kind, t.id)) meta.add("✓ " + Ui.tr("Assistido", "Seen"));
-        heroMeta.setText(TextUtils.join("  ·  ", meta));
+        showHeroMeta();
         heroOverview.setText(t.overview);
         for (int i = 0; i < heroDots.getChildCount(); i++) {
             heroDots.getChildAt(i).setBackground(TvUi.round(i == heroAt ? TvUi.INK : 0x59FFFFFF, 6 * k));
@@ -1796,6 +1906,16 @@ public class ExploreActivity extends Activity {
                 heroTitle.setVisibility(View.GONE);
             });
         });
+    }
+
+    private void showHeroMeta() {
+        Tmdb.Title t = (Tmdb.Title) heroList.get(heroAt)[0];
+        List<String> meta = new ArrayList<>();
+        meta.add(t.kind.equals("movie") ? Ui.tr("Filme", "Movie") : Ui.tr("Série", "Show"));
+        if (!t.year.isEmpty()) meta.add(t.year);
+        if (t.vote > 0) meta.add(String.format(Ui.PT, "★ %.1f", t.vote));
+        if (Tmdb.isSeen(this, t.kind, t.id)) meta.add("✓ " + Ui.tr("Assistido", "Seen"));
+        heroMeta.setText(TextUtils.join("  ·  ", meta));
     }
 
     /** The title's logo (a transparent PNG) in the app's language, else English, else without text; null if none. */
@@ -1876,13 +1996,13 @@ public class ExploreActivity extends Activity {
                 return out;
             case HOME: {
                 out.add(new Section(Ui.tr("Minha lista", "My list"), () -> Tmdb.watchlist(this)).personal().more(() -> showPage(LIST)));
-                out.add(new Section(Ui.tr("Recomendado para você", "Recommended for you"), this::forYou).personal());
+                out.add(new Section(Ui.tr("Recomendado para você", "Recommended for you"), this::forYou));
                 List<Tmdb.Title> seen = Tmdb.seen(this);
                 Tmdb.Title last = seen.isEmpty() ? null : seen.get(0);
                 if (last != null) {
                     out.add(new Section(Ui.tr("Porque você viu ", "Because you watched ") + last.name,
                             () -> fresh(Tmdb.titles(Tmdb.get("/" + last.kind + "/" + last.id + "/recommendations"), last.kind)))
-                            .personal().more("/" + last.kind + "/" + last.id + "/recommendations", last.kind));
+                            .more("/" + last.kind + "/" + last.id + "/recommendations", last.kind));
                 }
                 out.add(new Section(Ui.tr("Em alta hoje", "Trending today"), () -> Tmdb.titles(Tmdb.get("/trending/all/day"), "movie"))
                         .more("/trending/all/day", "movie"));

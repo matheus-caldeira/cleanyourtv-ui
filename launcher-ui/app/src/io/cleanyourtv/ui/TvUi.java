@@ -236,6 +236,12 @@ final class TvUi {
         Images.load(img, t.poster.isEmpty() ? null : (t.kind.equals("person") ? Tmdb.PROFILE : Tmdb.POSTER) + t.poster);
         card.setContentDescription(t.name + (t.year.isEmpty() ? "" : ", " + t.year));
         card.setOnClickListener(v -> open.open(t));
+        if (t.kind.equals("movie") || t.kind.equals("tv")) {   // hold OK: seen, My list, favorites, lists
+            card.setOnLongClickListener(v -> {
+                TitleMenu.show(a, v, t);
+                return true;
+            });
+        }
         cell.addView(card, new LinearLayout.LayoutParams(w, h));
         TextView name = text(a, k, 22, Ui.regular, DIM);
         focusable(card, k, 14 * k, name);
@@ -524,6 +530,15 @@ final class TvUi {
             }
             line.addView(cell);
             count++;
+        }
+
+        /** Focuses the poster at `index` (the last one if fewer), building lines up to it. False when empty. */
+        boolean focusAt(int index) {
+            while (count <= index && !waiting.isEmpty()) showWaiting(columns * CHUNK_LINES);
+            if (count == 0) return false;
+            int i = Math.min(index, count - 1);
+            View line = getChildAt(i / columns);
+            return line instanceof ViewGroup && ((ViewGroup) line).getChildAt(i % columns).requestFocus();
         }
 
         /** The focus is on `focused` (inside this grid): near the end, the next lines (or the next page). */

@@ -13,7 +13,6 @@ import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -544,46 +543,7 @@ public class DetailActivity extends Activity {
     }
 
     private void addToList() {
-        new Thread(() -> {
-            try {
-                List<String[]> lists = Tmdb.lists(this);
-                main.post(() -> pickList(lists));
-            } catch (Exception e) {
-                main.post(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }).start();
-    }
-
-    private void pickList(List<String[]> lists) {
-        String[] items = new String[lists.size() + 1];
-        for (int i = 0; i < lists.size(); i++) items[i] = lists.get(i)[1] + "  (" + lists.get(i)[2] + ")";
-        items[lists.size()] = "+  " + Ui.tr("Nova lista…", "New list…");
-        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle(Ui.tr("Adicionar a uma lista", "Add to a list"))
-                .setItems(items, (d, which) -> {
-                    if (which < lists.size()) {
-                        String list = lists.get(which)[0], name = lists.get(which)[1];
-                        background(Ui.tr("Não deu para adicionar: ", "Couldn't add: "), () -> {
-                            Tmdb.addToList(this, list, id);
-                            main.post(() -> Toast.makeText(this, Ui.tr("Adicionado a ", "Added to ") + name, Toast.LENGTH_SHORT).show());
-                        });
-                        return;
-                    }
-                    EditText field = new EditText(this);
-                    field.setSingleLine(true);
-                    field.setHint(Ui.tr("Nome da lista", "List name"));
-                    new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                            .setTitle(Ui.tr("Nova lista", "New list"))
-                            .setView(field)
-                            .setPositiveButton(Ui.tr("Criar", "Create"), (d2, w2) -> background(Ui.tr("Não deu para criar: ", "Couldn't create: "), () -> {
-                                String list = Tmdb.createList(this, field.getText().toString().trim());
-                                Tmdb.addToList(this, list, id);
-                                main.post(() -> Toast.makeText(this, Ui.tr("Lista criada", "List created"), Toast.LENGTH_SHORT).show());
-                            }))
-                            .setNegativeButton(Ui.tr("Cancelar", "Cancel"), null)
-                            .show();
-                })
-                .show();
+        TitleMenu.addToList(this, id);
     }
 
     private static String trailer(JSONObject o) {

@@ -413,6 +413,7 @@ final class HomeApps {
                 break;
             case INPUT:
                 intent = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(it.inputId));
+                RemoteKeys.rememberInput(a, it.inputId);   // the remote's "next input" goes on from here
                 break;
             case SETTINGS:
                 intent = new Intent().setComponent(new ComponentName(a, SettingsActivity.class));
