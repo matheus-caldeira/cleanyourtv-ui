@@ -452,7 +452,8 @@ final class HomeApps {
 
     /**
      * Live TV: tune the antenna input directly. MediaTek TV Center otherwise restores the last source used, which can
-     * be HDMI, so its explicit activity receives the tuner URI. Other TV apps keep the standard channel-list request.
+     * be HDMI, so its explicit activity receives the tuner URI. Other TV apps get the standard channel-list request, pinned
+     * to one activity so Android never shows an "Open with" chooser.
      */
     static Intent liveTv(Context c) {
         PackageManager pm = c.getPackageManager();
@@ -463,8 +464,30 @@ final class HomeApps {
                     .setComponent(mediaTek.getComponent());
         }
         if (tuner != null) {
+            // Always an explicit component: some file managers also answer this generic URI, and with no default set
+            // Android shows an "Open with" chooser instead of Live TV (TCL G05). And the tuner is always named: a bare
+            // launch of the TV app (the fallback loop below) only resumes whatever source it last showed, HDMI included.
             Intent channels = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelsUriForInput(tuner));
-            if (channels.resolveActivity(pm) != null) return channels;
+            List<ResolveInfo> handlers = pm.queryIntentActivities(channels, 0);
+            // 1. A known TV app's activity that declares this request.
+            for (String pkg : LIVE_TV_APPS) {
+                for (ResolveInfo ri : handlers) {
+                    if (pkg.equals(ri.activityInfo.packageName)) return channels.setComponent(component(ri));
+                }
+            }
+            // 2. Any system app that declares it: the TV maker's own, never a file manager installed from the store.
+            for (ResolveInfo ri : handlers) {
+                if ((ri.activityInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                    return channels.setComponent(component(ri));
+                }
+            }
+            // 3. A known TV app whose filter doesn't list it: its launch activity still reads the tuner URI (TCL).
+            for (String pkg : LIVE_TV_APPS) {
+                Intent app = launchIntent(pm, pkg);
+                if (app != null) return channels.setComponent(app.getComponent());
+            }
+            // 4. A single handler is no chooser.
+            if (handlers.size() == 1) return channels.setComponent(component(handlers.get(0)));
         }
         if (mediaTek != null) return mediaTek;
         for (String pkg : LIVE_TV_APPS) {
@@ -472,6 +495,10 @@ final class HomeApps {
             if (app != null) return app;
         }
         return null;
+    }
+
+    private static ComponentName component(ResolveInfo ri) {
+        return new ComponentName(ri.activityInfo.packageName, ri.activityInfo.name);
     }
 
     /**
