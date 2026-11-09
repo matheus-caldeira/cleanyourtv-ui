@@ -569,6 +569,7 @@ public class SettingsActivity extends Activity {
                 {"tmdb:explore", Ui.tr("Explorar filmes e séries", "Explore movies and shows")},
                 {"tmdb:watchlist", Ui.tr("Minha lista (TMDB)", "My watchlist (TMDB)")},
                 {"live", Ui.tr("TV ao vivo", "Live TV")},
+                {RemoteKeys.NEXT_INPUT, Ui.tr("Próxima entrada HDMI", "Next HDMI input")},
                 {"settings", Ui.tr("Configurações da TV", "TV settings")},
             };
             for (String[] sp : special) {

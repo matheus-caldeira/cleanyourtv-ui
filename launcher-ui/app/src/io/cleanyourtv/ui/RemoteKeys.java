@@ -22,7 +22,7 @@ import java.util.List;
  * "native" button is never touched, a "configurable" one runs the action the person picked in Settings > Remote
  * Buttons, or its default. Without remote.json, TCL and Vestel TVs keep the app buttons Free My TV handled.
  *
- * Actions: a package, "input:<tv input id>", "live", "settings", "home", "tmdb:explore", "tmdb:watchlist", or ""
+ * Actions: a package, "input:<tv input id>", "input:next" (the next HDMI input, press after press), "live", "settings", "home", "tmdb:explore", "tmdb:watchlist", or ""
  * (the button does what it did before).
  */
 final class RemoteKeys {
@@ -141,14 +141,72 @@ final class RemoteKeys {
             case "tmdb:watchlist":
                 return new Intent().setClassName(c, ExploreActivity.class.getName()).putExtra(ExploreActivity.EXTRA_SECTION, "watchlist")
                         .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            case NEXT_INPUT: {
+                HomeApps.Item next = nextInput(c);
+                if (next == null) return null;
+                android.widget.Toast.makeText(c, "HDMI " + next.number + (next.label.equals("HDMI " + next.number) ? "" : " · " + next.label),
+                        android.widget.Toast.LENGTH_SHORT).show();
+                return input(c, next.inputId);
+            }
             default:
-                if (action.startsWith("input:")) {
-                    return new Intent(Intent.ACTION_VIEW).setDataAndType(
-                            TvContract.buildChannelUriForPassthroughInput(action.substring("input:".length())),
-                            "vnd.android.cursor.item/channel");
-                }
+                if (action.startsWith("input:")) return input(c, action.substring("input:".length()));
                 return launchIntent(c.getPackageManager(), action);
         }
+    }
+
+    /** Each press goes to the next HDMI input (see nextInput), instead of one fixed input. */
+    static final String NEXT_INPUT = "input:next";
+
+    private static Intent input(Context c, String id) {
+        rememberInput(c, id);
+        return new Intent(Intent.ACTION_VIEW).setDataAndType(TvContract.buildChannelUriForPassthroughInput(id),
+                "vnd.android.cursor.item/channel");
+    }
+
+    /**
+     * The HDMI input after the last one this app opened, in port order. Android doesn't say which input is on screen,
+     * so the app remembers the one it opened last (here and from the home screen). A port takes part when a device on
+     * it is on, or when the person named it in the TV's settings (a PC that is off still counts); with none, every
+     * port does. TCL reports "connected standby" for a port with a device that is off and for an empty one alike.
+     */
+    static HomeApps.Item nextInput(Context c) {
+        List<HomeApps.Item> all = new ArrayList<>();
+        for (HomeApps.Item it : HomeApps.allInputs(c)) if (it.inputId != null) all.add(it);
+        if (all.isEmpty()) return null;
+        List<HomeApps.Item> ring = new ArrayList<>();
+        for (HomeApps.Item it : all) if (it.connected || !it.label.equals("HDMI " + it.number)) ring.add(it);
+        if (ring.isEmpty()) ring = all;
+        String last = lastInput(c);
+        int at = -1;
+        for (int i = 0; i < all.size(); i++) if (all.get(i).inputId.equals(last)) at = i;
+        HomeApps.Item pick = all.get(0);
+        for (int step = 1; step <= all.size(); step++) {
+            HomeApps.Item it = all.get((at + step + all.size()) % all.size());
+            if (ring.contains(it)) {
+                pick = it;
+                break;
+            }
+        }
+        StringBuilder log = new StringBuilder("next input: ");
+        for (HomeApps.Item it : all) {
+            log.append(it == pick ? "[" : "").append("HDMI ").append(it.number).append(it.connected ? " on" : "")
+                    .append(ring.contains(it) ? "" : " skipped").append(it.inputId.equals(last) ? " (last)" : "").append(it == pick ? "]" : "").append("; ");
+        }
+        AppLog.w(log.toString());
+        return pick;
+    }
+
+    /** Kept in a file: the key service and the home screen run in different processes. */
+    static void rememberInput(Context c, String id) {
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(new File(c.getFilesDir(), "last_input"))) {
+            out.write(id.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException ignored) {
+        }
+    }
+
+    private static String lastInput(Context c) {
+        String s = TvConfig.read(new File(c.getFilesDir(), "last_input"));
+        return s == null ? "" : s.trim();
     }
 
     private static Intent launchIntent(PackageManager pm, String pkg) {
