@@ -420,7 +420,7 @@ public class DetailActivity extends Activity {
         // voice search uses on Android TV), appChip's click searches the title by name instead of opening the app
         // cold. First in the row: the one app that's always worth trying. Off (no chip) until the person picks one.
         String iptvPkg = Prefs.iptvPlayer();
-        String kindLabel = title.kind.equals("movie") ? Ui.tr("Buscar filme", "Search movie") : Ui.tr("Buscar série", "Search show");
+        String kindLabel = title.kind.equals("movie") ? Ui.tr("Buscar filme via IPTV", "Search movie via IPTV") : Ui.tr("Buscar série via IPTV", "Search show via IPTV");
         View iptv = iptvPkg.isEmpty() ? null : appChip(iptvPkg, Providers.label(this, iptvPkg), kindLabel);
         if (iptv != null) line.addView(iptv);
         String[][] types = {{"flatrate", Ui.tr("Assinatura", "Subscription")}, {"free", Ui.tr("Grátis", "Free")},
