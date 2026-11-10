@@ -44,6 +44,11 @@ final class Prefs {
         version++;
     }
 
+    private static void put(String key, int value) {
+        sp().edit().putInt(key, value).apply();
+        version++;
+    }
+
     // MARK: - Language and units
 
     /** "auto", "pt", "en", "es", "de", "ru", "fr", "tr" or "he". */
@@ -242,6 +247,23 @@ final class Prefs {
     /** The app the Trailer button opens, or "" for the built-in pick (YouTube, then another YouTube-capable player). */
     static String trailerPlayer() { return sp().getString("trailerPlayer", ""); }
     static void setTrailerPlayer(String pkg) { put("trailerPlayer", pkg == null ? "" : pkg); }
+
+    // MARK: - IPTV player
+
+    /** The app the "Onde assistir" row leads with, since IPTV isn't a licensed catalog TMDB can look up;
+     *  "" leaves that chip out (off by default - not every person has one installed). */
+    static String iptvPlayer() { return sp().getString("iptvPlayer", ""); }
+    static void setIptvPlayer(String pkg) {
+        put("iptvPlayer", pkg == null ? "" : pkg);
+        setIptvFallbackWarnCount(0);   // reset on any pick, even re-picking the same app - treated as a fresh start
+    }
+
+    /** How many times the person already saw, for the currently picked IPTV player, the heads-up that it
+     *  didn't answer the search action - reset whenever a different app is picked, so a newly picked one
+     *  gets its own count. Shown up to IPTV_FALLBACK_WARN_LIMIT times, then falls back quietly. */
+    static final int IPTV_FALLBACK_WARN_LIMIT = 3;
+    static int iptvFallbackWarnCount() { return sp().getInt("iptvFallbackWarnCount", 0); }
+    static void setIptvFallbackWarnCount(int count) { put("iptvFallbackWarnCount", count); }
 
     // MARK: - Remote buttons
 
