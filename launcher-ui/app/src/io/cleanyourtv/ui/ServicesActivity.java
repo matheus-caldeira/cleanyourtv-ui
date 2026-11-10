@@ -62,6 +62,7 @@ public class ServicesActivity extends Activity {
         sub.setPadding(0, Math.round(12 * k), 0, Math.round(26 * k));
         list.addView(sub);
         list.addView(row("trailer", null, Ui.tr("Trailers de Filmes e Séries", "Movie & TV Trailers"), trailerPlayerValue(), v -> pickTrailerPlayer(providers)));
+        list.addView(row("iptv", null, Ui.tr("App de IPTV", "IPTV app"), iptvPlayerValue(), v -> pickIptvPlayer(providers)));
         list.addView(row("all", null, Ui.tr("Mostrar todos os serviços", "Show every service"),
                 Prefs.showAllProviders() ? Ui.tr("Ligado", "On") : Ui.tr("Desligado", "Off"), v -> {
                     Prefs.setShowAllProviders(!Prefs.showAllProviders());
@@ -116,6 +117,32 @@ public class ServicesActivity extends Activity {
                 .setTitle(Ui.tr("Trailers de Filmes e Séries", "Movie & TV Trailers"))
                 .setSingleChoiceItems(labels.toArray(new String[0]), Math.max(0, values.indexOf(current)), (d, which) -> {
                     Prefs.setTrailerPlayer(values.get(which));
+                    d.dismiss();
+                    build(providers);
+                })
+                .show();
+    }
+
+    private String iptvPlayerValue() {
+        String picked = Prefs.iptvPlayer();
+        return !picked.isEmpty() && Providers.installed(this, picked) ? Providers.label(this, picked) : Ui.tr("Desligado", "Off");
+    }
+
+    /** Any installed app, not only known IPTV players: there's no common intent signature to tell one apart
+     *  from any other app, unlike youtubePlayers() for the Trailer picker. */
+    private void pickIptvPlayer(List<Providers.Provider> providers) {
+        List<String> values = new ArrayList<>(), labels = new ArrayList<>();
+        values.add("");
+        labels.add(Ui.tr("Desligado", "Off"));
+        for (String[] a : apps) {
+            values.add(a[0]);
+            labels.add(a[1]);
+        }
+        String current = Prefs.iptvPlayer();
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(Ui.tr("App de IPTV", "IPTV app"))
+                .setSingleChoiceItems(labels.toArray(new String[0]), Math.max(0, values.indexOf(current)), (d, which) -> {
+                    Prefs.setIptvPlayer(values.get(which));
                     d.dismiss();
                     build(providers);
                 })

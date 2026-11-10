@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -413,6 +414,15 @@ public class DetailActivity extends Activity {
     private View whereToWatch(JSONObject region) {
         TvUi.Flow line = new TvUi.Flow(this, Math.round(18 * k), Math.round(18 * k));
         line.setPadding(0, Math.round(14 * k), Math.round(96 * k), Math.round(14 * k));
+        // IPTV has no catalog TMDB can look up (it isn't a licensed service), so there's no per-title match to
+        // check: the chip just offers whichever app the person picked in Settings > Services, the same way every
+        // other chip offers its own app. If that app answers MEDIA_PLAY_FROM_SEARCH (the action Google Assistant
+        // voice search uses on Android TV), appChip's click searches the title by name instead of opening the app
+        // cold. First in the row: the one app that's always worth trying. Off (no chip) until the person picks one.
+        String iptvPkg = Prefs.iptvPlayer();
+        String kindLabel = title.kind.equals("movie") ? Ui.tr("Buscar filme via IPTV", "Search movie via IPTV") : Ui.tr("Buscar série via IPTV", "Search show via IPTV");
+        View iptv = iptvPkg.isEmpty() ? null : appChip(iptvPkg, Providers.label(this, iptvPkg), kindLabel);
+        if (iptv != null) line.addView(iptv);
         String[][] types = {{"flatrate", Ui.tr("Assinatura", "Subscription")}, {"free", Ui.tr("Grátis", "Free")},
                 {"ads", Ui.tr("Grátis com anúncios", "Free with ads")}, {"rent", Ui.tr("Aluguel", "Rent")}, {"buy", Ui.tr("Compra", "Buy")}};
         Set<String> added = new HashSet<>();
@@ -431,6 +441,78 @@ public class DetailActivity extends Activity {
             return none;
         }
         return line;
+    }
+
+    /** A chip in the same shape as a TMDB provider's, for an app TMDB doesn't know about: its own launcher icon
+     *  instead of a TMDB logo, no subscription/free/rent label since there's none to show. Null if not installed. */
+    private View appChip(String pkg, String label, String sub) {
+        android.graphics.drawable.Drawable icon;
+        try {
+            icon = getPackageManager().getApplicationIcon(pkg);
+        } catch (PackageManager.NameNotFoundException e) {
+            return null;
+        }
+        LinearLayout chip = new LinearLayout(this);
+        chip.setOrientation(LinearLayout.HORIZONTAL);
+        chip.setGravity(Gravity.CENTER_VERTICAL);
+        chip.setPadding(Math.round(16 * k), Math.round(16 * k), Math.round(30 * k), Math.round(16 * k));
+        ImageView img = new ImageView(this);
+        img.setClipToOutline(true);
+        img.setBackground(TvUi.round(0x00000000, 12 * k));
+        img.setImageDrawable(icon);
+        int size = Math.round(64 * k);
+        chip.addView(img, new LinearLayout.LayoutParams(size, size));
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setPadding(Math.round(18 * k), 0, 0, 0);
+        TextView n = TvUi.text(this, k, 25, Ui.medium, TvUi.INK);
+        n.setText(label);
+        TextView s = TvUi.text(this, k, 21, Ui.regular, TvUi.DIM);
+        s.setText(sub);
+        s.setPadding(0, Math.round(6 * k), 0, 0);
+        texts.addView(n);
+        texts.addView(s);
+        chip.addView(texts);
+        TvUi.softFocus(chip, k, 18 * k);
+        chip.setOnClickListener(v -> searchOrOpen(pkg));
+        return chip;
+    }
+
+    /** MEDIA_PLAY_FROM_SEARCH, the action Google Assistant voice search fires on Android TV: apps that answer
+     *  it search (and often go straight to playing) the query, instead of opening on their own home screen.
+     *  Falls back to a plain open when the app doesn't answer it or the search misfires. */
+    private void searchOrOpen(String pkg) {
+        if (title == null) { watch(pkg); return; }
+        Intent i = new Intent("android.media.action.MEDIA_PLAY_FROM_SEARCH");
+        i.setPackage(pkg);
+        i.putExtra(android.app.SearchManager.QUERY, title.name);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (i.resolveActivity(getPackageManager()) == null) {
+            if (Prefs.iptvFallbackWarnCount() < Prefs.IPTV_FALLBACK_WARN_LIMIT) { warnFallback(pkg); return; }
+            watch(pkg);
+            return;
+        }
+        try {
+            startActivity(i);
+        } catch (Exception e) {
+            watch(pkg);
+        }
+    }
+
+    /** First IPTV_FALLBACK_WARN_LIMIT times the picked IPTV app doesn't answer MEDIA_PLAY_FROM_SEARCH: a
+     *  heads-up, since that can mean the pick isn't an IPTV player at all - but also happens for a real one
+     *  that just doesn't implement search, so this never claims the app is wrong, only that it didn't answer.
+     *  Shown a few times per pick (Prefs.setIptvPlayer resets the count), then every later open falls back
+     *  quietly - a real pick stops seeing it once the person's dismissed it a few times. */
+    private void warnFallback(String pkg) {
+        Prefs.setIptvFallbackWarnCount(Prefs.iptvFallbackWarnCount() + 1);
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(Ui.tr("App de IPTV", "IPTV app"))
+                .setMessage(Ui.tr(Providers.label(this, pkg) + " não respondeu à busca. Quer abrir assim mesmo, ou trocar o app em Ajustes › Serviços?",
+                        Providers.label(this, pkg) + " didn't answer the search. Open it anyway, or switch the app in Settings › Services?"))
+                .setPositiveButton(Ui.tr("Abrir assim mesmo", "Open anyway"), (d, w) -> watch(pkg))
+                .setNegativeButton(Ui.tr("Ir pra Ajustes", "Go to Settings"), (d, w) -> startActivity(new Intent(this, ServicesActivity.class)))
+                .show();
     }
 
     private View chip(int pid, String name, String logo, String type) {
