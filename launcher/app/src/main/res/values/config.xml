@@ -79,7 +79,7 @@
     <!-- Tiles that open a screen of the app instead of its start screen: "package=action", sent to that package.
          A tile whose action no longer resolves opens the app normally. MagentaTV's program guide:
          com.telekom.onetv.tv.pl=com.telekom.onetv.tv.pl.action.PROGRAM_GUIDE. "package=input:<input id>" makes
-         the tile switch to that TV input instead (ids from dumpsys tv_input), e.g. a Live TV tile straight to
+         the tile (and a top_bar_apps button) switch to that TV input instead (ids from dumpsys tv_input), e.g. a Live TV tile straight to
          HDMI 1: com.mediatek.wwtv.tvcenter=input:com.mediatek.tvinput/.hdmi.HDMIInputService/HW5. "package=view:uri"
          opens that URI in the package instead (ACTION_VIEW): Bbox TV's live channels are
          fr.bouyguestelecom.tv.bbui=view:bbox://live. -->
@@ -142,6 +142,14 @@
          steps (TCL G03 / BeyondTV4 on Android 11, #1100); a swallowed key gets no auto-repeat from Android, hence
          the helper's own. Leave it off where a tap is one step. A theme can set it ("consume_volume_keys"). -->
     <bool name="consume_volume_keys">false</bool>
+
+    <!-- With key_filter on, a volume change stops HomeKeyService and InputKeyService filtering keys for 4 s. For
+         firmware that changes volume once per press while any service filters keys, so a held volume key never
+         repeats, and the helpers never see the volume keys (Xiaomi MOEU0, Google TV 14): the first press steps
+         once, a press or hold within those 4 s repeats as usual, and the remote buttons below work again once the
+         pause ends. With gamepad_passthrough on too, filtering stays off while a gamepad is connected. A theme can
+         set it ("volume_pauses_filter"). -->
+    <bool name="volume_pauses_filter">false</bool>
 
     <!-- true: Channel Up/Down do nothing while Home is in front. Unhandled, they open the TV's Live TV app (Sony
          BRAVIA, Android 9: com.sony.dtv.tvx), which is a stray press on a set nobody watches broadcast on. Inside any
@@ -211,8 +219,9 @@
          it back. The KTC LUMIO VISION remote (Realtek Google TV) sends Netflix 191, YouTube 190, Prime Video 195
          and TL;DR 200. Some remotes send several app buttons as one keycode and tell them apart only by scancode
          (Sony BRAVIA: YouTube, Prime Video and Disney+ are all keycode 196, scancodes 485, 490 and 491); list those
-         as "scan:scancode:package", e.g. scan:490:com.wbd.hbomax, found with `tools/tv.py 'getevent -lt'` (the
-         EV_KEY code, in hex). A scancode entry wins over a keycode. In place of a package, "input:<input id>"
+         as "scan:scancode:package", e.g. scan:490:com.wbd.hbomax, found with `tools/tv.py 'getevent -t'` (the
+         EV_KEY code: the hex number after 0001 on the button's line, written in decimal, so 01ea is 490). A
+         scancode entry wins over a keycode. In place of a package, "input:<input id>"
          switches to that TV input, e.g. scan:227:input:com.tcl.tvinput/.passthroughinput.TvPassThroughService/HW1413744640
          for HDMI 3 on a TCL Smart TV Pro; the ids are in `tools/tv.py 'dumpsys tv_input'` (hdmi_port=N under
          TvInputHardwareInfo). An action word in place of a package runs that action instead: back, home, recents,

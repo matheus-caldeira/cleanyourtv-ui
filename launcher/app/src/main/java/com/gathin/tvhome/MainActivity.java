@@ -2609,7 +2609,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             button.setCompoundDrawableTintList(null);
             button.setContentDescription(label);
             Intent target = launch;
-            button.setOnClickListener(v -> open(new Intent(target)));
+            // An input: action switches the TV input, as the tile for the same app does.
+            String inputId = LaunchActions.inputId(launchActions.get(pkg));
+            if (inputId != null) button.setOnClickListener(v -> openInput(inputId));
+            else button.setOnClickListener(v -> open(new Intent(target)));
             // After the network pill and the VPN pill; the Hebrew bar runs the other way, so before both there.
             bar.addView(button, bar.indexOfChild(getResources().getBoolean(R.bool.rtl_menu_bar) ? btnVpn : btnWifi));
             topAppButtons.add(button);
@@ -2748,7 +2751,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             else if (hour < 21) res = R.string.good_afternoon;
             else res = R.string.good_night;
         } else if ("da".equals(lang)) {
-            // Danish day parts: "God morgen" until 11, then "God formiddag" to noon.
+            // Danish day parts: "Godmorgen" until 11, then "God formiddag" to noon.
             if (hour < 5) res = R.string.good_night;
             else if (hour < 11) res = R.string.good_morning;
             else if (hour < 12) res = R.string.good_forenoon;

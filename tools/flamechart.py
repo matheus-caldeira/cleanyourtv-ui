@@ -5,7 +5,8 @@ One panel per trace, one lane per thread, every slice drawn on the same time sca
 visibly shorter. Slices whose name matches --highlight are drawn in magenta, and their time is summed
 (nested slices once), with the change against the first panel.
 
-    tools/flamechart.py traces/before traces/after --highlight '^(activityResume|RV OnBindView)$' \\
+    tools/venv/bin/python -I tools/flamechart.py traces/before traces/after \
+        --highlight '^(activityResume|RV OnBindView)$' \
         --title 'Back to Home: Home press to first frame' --out chart.png
 
 BEFORE and AFTER are .pftrace files or folders; for a folder the median run is drawn, by the first of
@@ -61,7 +62,7 @@ def window(q, package, spec, nav):
 def lanes(q, package, names, t0, t1):
     """[(label, slices)] for each lane: main, RenderThread, or any thread name in the launcher's process."""
     upid, main, render = trace_report.threads(q, package)
-    out = []
+    out, seen = [], set()
     for name in names:
         if name == "main":
             utid = main
@@ -74,6 +75,9 @@ def lanes(q, package, names, t0, t1):
         if utid is None:
             out.append((name, []))
             continue
+        if utid in seen:
+            continue
+        seen.add(utid)
         rows = q(f"select s.id, s.ts, s.dur, s.depth, s.name, s.parent_id from slice s join thread_track tt "
                  f"on s.track_id = tt.id where tt.utid = {utid} and s.ts < {t1} and s.ts + s.dur > {t0} "
                  f"and s.dur > 0 order by s.ts")

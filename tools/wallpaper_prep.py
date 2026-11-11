@@ -1,6 +1,6 @@
 """Turns a folder of your own photos into wallpapers the launcher can show on a small TV.
 
-    python tools/wallpaper_prep.py ~/Pictures/trip /tmp/my-theme/wallpapers
+    tools/venv/bin/python -I tools/wallpaper_prep.py ~/Pictures/trip /tmp/my-theme/wallpapers
 
 Every JPEG, PNG, WebP and (with pillow-heif) HEIC file in the first folder is centre-cropped to 16:9, shrunk to
 1280x720, darkened so the clock, the grid and the dock stay readable, and saved as 01.jpg, 02.jpg, ... in the
@@ -15,9 +15,11 @@ The darkening is painted into the picture, so wallpaper_dim can stay at 0 and th
 layer. The numbers that worked on a Xiaomi Mi Box S (2 GB) are the defaults: brightness 0.25 and a gradient
 that adds up to 60% black toward the bottom, where the dock sits.
 
-Needs Pillow; HEIC (iPhone and many Android cameras) also needs pillow-heif:
+Needs Pillow; HEIC (iPhone and many Android cameras) also needs pillow-heif. Both go into tools/venv, the
+Python the line above runs the tool with - a system python3 has neither, and on Ubuntu 24.04 its pip is not
+installed (PEP 668 leaves it externally managed):
 
-    python -m pip install -r tools/requirements-photos.txt
+    tools/venv/bin/pip install -r tools/requirements-photos.txt
 
 Use pictures you have the right to show.
 """
@@ -140,15 +142,20 @@ def main(argv=None):
         parser.error(f"{args.source} is not a folder")
     source_real = os.path.realpath(args.source)
     target_real = os.path.realpath(args.target)
-    if target_real == source_real or target_real.startswith(source_real.rstrip(os.sep) + os.sep):
+    # A case alias can spell an ancestor differently while naming the source directory itself.
+    if (target_real == source_real or target_real.startswith(source_real.rstrip(os.sep) + os.sep)
+            or any(parent.is_dir() and os.path.samefile(source_real, parent)
+                   for parent in Path(target_real).parents)):
         parser.error("the target must be a different folder, and not inside the source: the originals are never overwritten")
     if os.path.exists(args.target) and os.path.samefile(args.source, args.target):
         parser.error("the target must be a different folder, and not inside the source: the originals are never overwritten")
+    if os.path.exists(args.target) and not os.path.isdir(args.target):
+        parser.error(f"{args.target} is a file, not a folder")
 
     try:
         import PIL  # noqa: F401
     except ImportError:
-        sys.exit("Pillow is missing: python -m pip install -r tools/requirements-photos.txt")
+        sys.exit("Pillow is missing: tools/venv/bin/pip install -r tools/requirements-photos.txt")
     try:
         import pillow_heif
         pillow_heif.register_heif_opener()
@@ -162,13 +169,16 @@ def main(argv=None):
     if clashes:
         sys.exit(f"{', '.join(clashes)} in {args.target} would overwrite your original photos "
                  "(a link or the same file); remove or rename them, or pick another target. Nothing was written.")
-    os.makedirs(args.target, exist_ok=True)
+    try:
+        os.makedirs(args.target, exist_ok=True)
+    except OSError as e:
+        sys.exit(f"cannot create the folder {args.target}: {e.strerror}. Nothing was written.")
 
     written = 0
     for number, path in enumerate(files, 1):
         name = os.path.basename(path)
         if os.path.splitext(name)[1].lower() in {".heic", ".heif"} and pillow_heif is None:
-            print(f"skipped {name}: HEIC needs pillow-heif (python -m pip install -r tools/requirements-photos.txt)")
+            print(f"skipped {name}: HEIC needs pillow-heif (tools/venv/bin/pip install -r tools/requirements-photos.txt)")
             continue
         out_path = os.path.join(args.target, "%02d.jpg" % number)
         try:

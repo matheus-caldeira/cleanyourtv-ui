@@ -6,8 +6,8 @@ screenshots pixel by pixel, leaving out the regions you --mask (the clock moves 
 many pixels differ and where. It also writes the pair side by side, with the regions you --blur
 pixelated (your Wi-Fi name, an account picture), ready to attach.
 
-    tools/screendiff.py shots/before.png shots/after.png --mask 90,40,900,220 \\
-        --blur 1265,125,1525,197 --out shots/before-after.png
+    tools/venv/bin/python -I tools/screendiff.py shots/before.png shots/after.png \
+        --mask 90,40,900,220 --blur 1265,125,1525,197 --out shots/before-after.png
 
 Boxes are x0,y0,x1,y1 in the screenshots' pixels. Exit status: 0 identical, 1 different, 2 an error.
 Needs Pillow (tools/requirements-perf.txt). Read tools/screendiff.md first.
@@ -16,6 +16,9 @@ import argparse
 from pathlib import Path
 import re
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import picture_file  # noqa: E402 - also available when the documented command uses -I
 
 BOX = re.compile(r"^\d+,\d+,\d+,\d+$")
 
@@ -75,14 +78,14 @@ def same_file(first, second):
 
 
 def write(image, path):
-    """Save one picture, naming the path and the reason if it cannot be written.
+    """Stage one picture before replacing its destination, naming a failed write.
 
     Pillow answers an unwritable destination with OSError and an extension it does not know with
     ValueError; either left alone ends the run in a traceback with exit 1, the status the page reads as
     'the screenshots differ'.
     """
     try:
-        image.save(path)
+        picture_file.save(image, path)
     except (OSError, ValueError) as e:
         raise ValueError(f"cannot write {path}: {getattr(e, 'strerror', None) or e}") from e
 
