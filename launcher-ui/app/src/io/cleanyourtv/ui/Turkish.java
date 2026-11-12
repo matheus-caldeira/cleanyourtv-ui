@@ -155,6 +155,12 @@ final class Turkish {
             case "Quotes widget": return "Piyasa Bileşeni";
             case "On": return "Açık";
             case "Off": return "Kapalı";
+            case "Search movie via IPTV": return "Filmi IPTV'de ara";
+            case "Search show via IPTV": return "Diziyi IPTV'de ara";
+            case "IPTV app": return "IPTV uygulaması";
+            case "Open anyway": return "Yine de aç";
+            case "Go to Settings": return "Ayarlar'a git";
+            case "The app didn't answer the search. Open it anyway, or switch the app in Settings › Services?": return "Uygulama aramaya yanıt vermedi. Yine de açılsın mı, yoksa Ayarlar › Platformlar'dan uygulamayı değiştirmek ister misin?";
             case "Shelf": return "Raf";
             case "on the shelf, place ": return "rafta, sıra ";
             case "not on the shelf": return "rafta değil";

@@ -243,6 +243,21 @@ final class Prefs {
     static String trailerPlayer() { return sp().getString("trailerPlayer", ""); }
     static void setTrailerPlayer(String pkg) { put("trailerPlayer", pkg == null ? "" : pkg); }
 
+    // MARK: - IPTV player
+
+    /** The app the "Onde assistir" row leads with, or "" for no IPTV chip (the default). */
+    static String iptvPlayer() { return sp().getString("iptvPlayer", ""); }
+    static void setIptvPlayer(String pkg) {
+        put("iptvPlayer", pkg == null ? "" : pkg);
+        setIptvFallbackWarnCount(0);
+    }
+
+    /** How often the "didn't answer the search" heads-up was shown for the current pick. Not a setting:
+     *  written without bumping version, so it never makes Home start over. */
+    static final int IPTV_FALLBACK_WARN_LIMIT = 3;
+    static int iptvFallbackWarnCount() { return sp().getInt("iptvFallbackWarnCount", 0); }
+    static void setIptvFallbackWarnCount(int count) { sp().edit().putInt("iptvFallbackWarnCount", count).apply(); }
+
     // MARK: - Remote buttons
 
     // The key service runs in its own small process (:keys), so that a busy home screen can never delay the TV's keys.

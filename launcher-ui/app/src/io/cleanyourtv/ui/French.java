@@ -220,6 +220,12 @@ final class French {
             case "Show every service": return "Afficher toutes les plateformes";
             case "On": return "Activé";
             case "Off": return "Désactivé";
+            case "Search movie via IPTV": return "Chercher le film via IPTV";
+            case "Search show via IPTV": return "Chercher la série via IPTV";
+            case "IPTV app": return "App IPTV";
+            case "Open anyway": return "Ouvrir quand même";
+            case "Go to Settings": return "Aller aux Réglages";
+            case "The app didn't answer the search. Open it anyway, or switch the app in Settings › Services?": return "L’app n’a pas répondu à la recherche. L’ouvrir quand même, ou changer d’app dans Réglages › Plateformes ?";
             case "Loading the services…": return "Chargement des plateformes…";
             case "Couldn't fetch the services: ": return "Impossible de récupérer les plateformes : ";
             case "No app on the TV": return "Aucune appli sur la TV";
