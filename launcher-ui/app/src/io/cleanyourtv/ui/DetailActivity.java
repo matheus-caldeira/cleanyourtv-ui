@@ -411,18 +411,15 @@ public class DetailActivity extends Activity {
         return null;
     }
 
+    private TvUi.Flow whereLine;
+    private View iptvChip;
+    private String iptvShown = "";
+
     private View whereToWatch(JSONObject region) {
-        TvUi.Flow line = new TvUi.Flow(this, Math.round(18 * k), Math.round(18 * k));
-        line.setPadding(0, Math.round(14 * k), Math.round(96 * k), Math.round(14 * k));
-        // IPTV has no catalog TMDB can look up (it isn't a licensed service), so there's no per-title match to
-        // check: the chip just offers whichever app the person picked in Settings > Services, the same way every
-        // other chip offers its own app. If that app answers MEDIA_PLAY_FROM_SEARCH (the action Google Assistant
-        // voice search uses on Android TV), appChip's click searches the title by name instead of opening the app
-        // cold. First in the row: the one app that's always worth trying. Off (no chip) until the person picks one.
-        String iptvPkg = Prefs.iptvPlayer();
-        String kindLabel = title.kind.equals("movie") ? Ui.tr("Buscar filme via IPTV", "Search movie via IPTV") : Ui.tr("Buscar série via IPTV", "Search show via IPTV");
-        View iptv = iptvPkg.isEmpty() ? null : appChip(iptvPkg, Providers.label(this, iptvPkg), kindLabel);
-        if (iptv != null) line.addView(iptv);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        whereLine = new TvUi.Flow(this, Math.round(18 * k), Math.round(18 * k));
+        whereLine.setPadding(0, Math.round(14 * k), Math.round(96 * k), Math.round(14 * k));
         String[][] types = {{"flatrate", Ui.tr("Assinatura", "Subscription")}, {"free", Ui.tr("Grátis", "Free")},
                 {"ads", Ui.tr("Grátis com anúncios", "Free with ads")}, {"rent", Ui.tr("Aluguel", "Rent")}, {"buy", Ui.tr("Compra", "Buy")}};
         Set<String> added = new HashSet<>();
@@ -432,99 +429,108 @@ public class DetailActivity extends Activity {
                 JSONObject p = list.optJSONObject(i);
                 int pid = p.optInt("provider_id");
                 if (!added.add(pid + type[0])) continue;
-                line.addView(chip(pid, p.optString("provider_name"), p.optString("logo_path"), type[1]));
+                whereLine.addView(chip(pid, p.optString("provider_name"), p.optString("logo_path"), type[1]));
             }
         }
-        if (line.getChildCount() == 0) {
+        if (whereLine.getChildCount() == 0) {
             TextView none = TvUi.text(this, k, 26, Ui.regular, TvUi.DIM);
             none.setText(Ui.tr("Não está em nenhum serviço de streaming no Brasil agora.", "Not on any streaming service in the region right now."));
-            return none;
+            box.addView(none);
         }
-        return line;
+        box.addView(whereLine, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        showIptvChip();
+        return box;
     }
 
-    /** A chip in the same shape as a TMDB provider's, for an app TMDB doesn't know about: its own launcher icon
-     *  instead of a TMDB logo, no subscription/free/rent label since there's none to show. Null if not installed. */
-    private View appChip(String pkg, String label, String sub) {
-        android.graphics.drawable.Drawable icon;
-        try {
-            icon = getPackageManager().getApplicationIcon(pkg);
-        } catch (PackageManager.NameNotFoundException e) {
-            return null;
+    /** The IPTV app picked in Settings › Services leads the row. IPTV has no catalog TMDB can check, so the chip
+     *  searches the title there rather than promising it. Called again on return, in case the pick changed. */
+    private void showIptvChip() {
+        if (iptvChip != null) whereLine.removeView(iptvChip);
+        iptvShown = Prefs.iptvPlayer();
+        iptvChip = null;
+        if (!iptvShown.isEmpty() && Providers.installed(this, iptvShown)) {
+            ImageView img = new ImageView(this);
+            try {
+                img.setImageDrawable(getPackageManager().getApplicationIcon(iptvShown));
+            } catch (PackageManager.NameNotFoundException ignored) {
+            }
+            String pkg = iptvShown;
+            iptvChip = chipBox(img, Providers.label(this, pkg), chipSub("movie".equals(kind)
+                    ? Ui.tr("Buscar filme via IPTV", "Search movie via IPTV") : Ui.tr("Buscar série via IPTV", "Search show via IPTV")));
+            iptvChip.setOnClickListener(v -> searchOrOpen(pkg));
+            whereLine.addView(iptvChip, 0);
         }
-        LinearLayout chip = new LinearLayout(this);
-        chip.setOrientation(LinearLayout.HORIZONTAL);
-        chip.setGravity(Gravity.CENTER_VERTICAL);
-        chip.setPadding(Math.round(16 * k), Math.round(16 * k), Math.round(30 * k), Math.round(16 * k));
-        ImageView img = new ImageView(this);
-        img.setClipToOutline(true);
-        img.setBackground(TvUi.round(0x00000000, 12 * k));
-        img.setImageDrawable(icon);
-        int size = Math.round(64 * k);
-        chip.addView(img, new LinearLayout.LayoutParams(size, size));
-        LinearLayout texts = new LinearLayout(this);
-        texts.setOrientation(LinearLayout.VERTICAL);
-        texts.setPadding(Math.round(18 * k), 0, 0, 0);
-        TextView n = TvUi.text(this, k, 25, Ui.medium, TvUi.INK);
-        n.setText(label);
-        TextView s = TvUi.text(this, k, 21, Ui.regular, TvUi.DIM);
-        s.setText(sub);
-        s.setPadding(0, Math.round(6 * k), 0, 0);
-        texts.addView(n);
-        texts.addView(s);
-        chip.addView(texts);
-        TvUi.softFocus(chip, k, 18 * k);
-        chip.setOnClickListener(v -> searchOrOpen(pkg));
-        return chip;
+        whereLine.setVisibility(whereLine.getChildCount() == 0 ? View.GONE : View.VISIBLE);
     }
 
-    /** MEDIA_PLAY_FROM_SEARCH, the action Google Assistant voice search fires on Android TV: apps that answer
-     *  it search (and often go straight to playing) the query, instead of opening on their own home screen.
-     *  Falls back to a plain open when the app doesn't answer it or the search misfires. */
+    /** MEDIA_PLAY_FROM_SEARCH, what voice search sends on Android TV: the app searches the title instead of
+     *  opening cold. An app that doesn't answer it gets a heads-up a few times per pick, then just opens. */
     private void searchOrOpen(String pkg) {
-        if (title == null) { watch(pkg); return; }
         Intent i = new Intent("android.media.action.MEDIA_PLAY_FROM_SEARCH");
         i.setPackage(pkg);
         i.putExtra(android.app.SearchManager.QUERY, title.name);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (i.resolveActivity(getPackageManager()) == null) {
-            if (Prefs.iptvFallbackWarnCount() < Prefs.IPTV_FALLBACK_WARN_LIMIT) { warnFallback(pkg); return; }
-            watch(pkg);
+            if (Prefs.iptvFallbackWarnCount() < Prefs.IPTV_FALLBACK_WARN_LIMIT) warnFallback(pkg);
+            else openIptv(pkg);
             return;
         }
         try {
             startActivity(i);
+            Tmdb.setSeen(this, title, true);
         } catch (Exception e) {
-            watch(pkg);
+            openIptv(pkg);
         }
     }
 
-    /** First IPTV_FALLBACK_WARN_LIMIT times the picked IPTV app doesn't answer MEDIA_PLAY_FROM_SEARCH: a
-     *  heads-up, since that can mean the pick isn't an IPTV player at all - but also happens for a real one
-     *  that just doesn't implement search, so this never claims the app is wrong, only that it didn't answer.
-     *  Shown a few times per pick (Prefs.setIptvPlayer resets the count), then every later open falls back
-     *  quietly - a real pick stops seeing it once the person's dismissed it a few times. */
+    /** IPTV apps have no per-title deep links, so this skips watch()'s lookup and just opens the app. */
+    private void openIptv(String pkg) {
+        Tmdb.setSeen(this, title, true);
+        RemoteKeys.run(this, pkg);
+    }
+
+    /** Never says the pick is wrong: a real IPTV player without search support looks the same to Android. */
     private void warnFallback(String pkg) {
         Prefs.setIptvFallbackWarnCount(Prefs.iptvFallbackWarnCount() + 1);
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle(Ui.tr("App de IPTV", "IPTV app"))
-                .setMessage(Ui.tr(Providers.label(this, pkg) + " não respondeu à busca. Quer abrir assim mesmo, ou trocar o app em Ajustes › Serviços?",
-                        Providers.label(this, pkg) + " didn't answer the search. Open it anyway, or switch the app in Settings › Services?"))
-                .setPositiveButton(Ui.tr("Abrir assim mesmo", "Open anyway"), (d, w) -> watch(pkg))
+                .setTitle(Providers.label(this, pkg))
+                .setMessage(Ui.tr("O app não respondeu à busca. Quer abrir assim mesmo, ou trocar o app em Ajustes › Serviços?",
+                        "The app didn't answer the search. Open it anyway, or switch the app in Settings › Services?"))
+                .setPositiveButton(Ui.tr("Abrir assim mesmo", "Open anyway"), (d, w) -> openIptv(pkg))
                 .setNegativeButton(Ui.tr("Ir pra Ajustes", "Go to Settings"), (d, w) -> startActivity(new Intent(this, ServicesActivity.class)))
                 .show();
     }
 
     private View chip(int pid, String name, String logo, String type) {
         String app = Providers.app(this, pid, name);
+        ImageView img = new ImageView(this);
+        Images.load(img, logo.isEmpty() ? null : Tmdb.LOGO + logo);
+        TextView s = chipSub(type + "  ·  " + (app != null ? Ui.tr("abre ", "opens ") + Providers.label(this, app) : Ui.tr("sem app na TV", "no app on the TV")));
+        if (app != null) chipNotes.add(new Object[] {app, s, type});
+        View chip = chipBox(img, name, s);
+        chip.setOnClickListener(v -> {
+            if (app != null) watch(app);
+            else Toast.makeText(this, Ui.tr("Nenhum app para " + name + ". Escolha um em Ajustes › Serviços.",
+                    "No app for " + name + ". Pick one in Settings › Services."), Toast.LENGTH_LONG).show();
+        });
+        return chip;
+    }
+
+    private TextView chipSub(String text) {
+        TextView s = TvUi.text(this, k, 21, Ui.regular, TvUi.DIM);
+        s.setText(text);
+        s.setPadding(0, Math.round(6 * k), 0, 0);
+        return s;
+    }
+
+    /** The shape every "Onde assistir" chip shares: a logo, the name, and a dim line under it. */
+    private LinearLayout chipBox(ImageView img, String name, TextView sub) {
         LinearLayout chip = new LinearLayout(this);
         chip.setOrientation(LinearLayout.HORIZONTAL);
         chip.setGravity(Gravity.CENTER_VERTICAL);
         chip.setPadding(Math.round(16 * k), Math.round(16 * k), Math.round(30 * k), Math.round(16 * k));
-        ImageView img = new ImageView(this);
         img.setClipToOutline(true);
         img.setBackground(TvUi.round(0x00000000, 12 * k));
-        Images.load(img, logo.isEmpty() ? null : Tmdb.LOGO + logo);
         int size = Math.round(64 * k);
         chip.addView(img, new LinearLayout.LayoutParams(size, size));
         LinearLayout texts = new LinearLayout(this);
@@ -532,19 +538,10 @@ public class DetailActivity extends Activity {
         texts.setPadding(Math.round(18 * k), 0, 0, 0);
         TextView n = TvUi.text(this, k, 25, Ui.medium, TvUi.INK);
         n.setText(name);
-        TextView s = TvUi.text(this, k, 21, Ui.regular, TvUi.DIM);
-        s.setText(type + "  ·  " + (app != null ? Ui.tr("abre ", "opens ") + Providers.label(this, app) : Ui.tr("sem app na TV", "no app on the TV")));
-        if (app != null) chipNotes.add(new Object[] {app, s, type});
-        s.setPadding(0, Math.round(6 * k), 0, 0);
         texts.addView(n);
-        texts.addView(s);
+        texts.addView(sub);
         chip.addView(texts);
         TvUi.softFocus(chip, k, 18 * k);
-        chip.setOnClickListener(v -> {
-            if (app != null) watch(app);
-            else Toast.makeText(this, Ui.tr("Nenhum app para " + name + ". Escolha um em Ajustes › Serviços.",
-                    "No app for " + name + ". Pick one in Settings › Services."), Toast.LENGTH_LONG).show();
-        });
         return chip;
     }
 
@@ -677,6 +674,7 @@ public class DetailActivity extends Activity {
     @Override protected void onStart() {
         super.onStart();
         if (stopped) TvUi.restoreImages(getWindow().getDecorView());
+        if (stopped && whereLine != null && !Prefs.iptvPlayer().equals(iptvShown)) showIptvChip();   // back from Settings › Services
         stopped = false;
     }
 }

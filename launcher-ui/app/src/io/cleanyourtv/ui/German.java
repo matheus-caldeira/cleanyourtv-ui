@@ -112,6 +112,12 @@ final class German {
             case "Quotes widget": return "Kurs-Widget";
             case "On": return "An";
             case "Off": return "Aus";
+            case "Search movie via IPTV": return "Film über IPTV suchen";
+            case "Search show via IPTV": return "Serie über IPTV suchen";
+            case "IPTV app": return "IPTV-App";
+            case "Open anyway": return "Trotzdem öffnen";
+            case "Go to Settings": return "Zu den Einstellungen";
+            case "The app didn't answer the search. Open it anyway, or switch the app in Settings › Services?": return "Die App hat auf die Suche nicht reagiert. Trotzdem öffnen oder die App unter Einstellungen › Services wechseln?";
             case "Shelf": return "Leiste";
             case "on the shelf, place ": return "in der Leiste, Platz ";
             case "not on the shelf": return "nicht in der Leiste";

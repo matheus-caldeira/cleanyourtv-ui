@@ -5,10 +5,6 @@ launcher/.gradle/
 launcher/build/
 launcher/app/build/
 launcher/local.properties
-
-# your dev machine's TV_HOST/TV_MODEL and other local-only settings stay local
-.env*
-
 # your own TV's dumps (serial, android_id, device names) stay local
 backup/
 # session screenshots and working notes (may show the Wi-Fi name or account avatar) stay local

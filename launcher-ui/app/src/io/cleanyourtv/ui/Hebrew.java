@@ -221,6 +221,12 @@ final class Hebrew {
             case "Show every service": return "הצגת כל השירותים";
             case "On": return "פועל";
             case "Off": return "כבוי";
+            case "Search movie via IPTV": return "חיפוש סרט ב-IPTV";
+            case "Search show via IPTV": return "חיפוש סדרה ב-IPTV";
+            case "IPTV app": return "אפליקציית IPTV";
+            case "Open anyway": return "לפתוח בכל זאת";
+            case "Go to Settings": return "להגדרות";
+            case "The app didn't answer the search. Open it anyway, or switch the app in Settings › Services?": return "האפליקציה לא הגיבה לחיפוש. לפתוח אותה בכל זאת, או להחליף אפליקציה בהגדרות › שירותים?";
             case "Loading the services…": return "טוען את השירותים…";
             case "Couldn't fetch the services: ": return "לא ניתן לטעון את השירותים: ";
             case "No app on the TV": return "אין אפליקציה בטלוויזיה";

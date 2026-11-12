@@ -44,11 +44,6 @@ final class Prefs {
         version++;
     }
 
-    private static void put(String key, int value) {
-        sp().edit().putInt(key, value).apply();
-        version++;
-    }
-
     // MARK: - Language and units
 
     /** "auto", "pt", "en", "es", "de", "ru", "fr", "tr" or "he". */
@@ -250,20 +245,18 @@ final class Prefs {
 
     // MARK: - IPTV player
 
-    /** The app the "Onde assistir" row leads with, since IPTV isn't a licensed catalog TMDB can look up;
-     *  "" leaves that chip out (off by default - not every person has one installed). */
+    /** The app the "Onde assistir" row leads with, or "" for no IPTV chip (the default). */
     static String iptvPlayer() { return sp().getString("iptvPlayer", ""); }
     static void setIptvPlayer(String pkg) {
         put("iptvPlayer", pkg == null ? "" : pkg);
-        setIptvFallbackWarnCount(0);   // reset on any pick, even re-picking the same app - treated as a fresh start
+        setIptvFallbackWarnCount(0);
     }
 
-    /** How many times the person already saw, for the currently picked IPTV player, the heads-up that it
-     *  didn't answer the search action - reset whenever a different app is picked, so a newly picked one
-     *  gets its own count. Shown up to IPTV_FALLBACK_WARN_LIMIT times, then falls back quietly. */
+    /** How often the "didn't answer the search" heads-up was shown for the current pick. Not a setting:
+     *  written without bumping version, so it never makes Home start over. */
     static final int IPTV_FALLBACK_WARN_LIMIT = 3;
     static int iptvFallbackWarnCount() { return sp().getInt("iptvFallbackWarnCount", 0); }
-    static void setIptvFallbackWarnCount(int count) { put("iptvFallbackWarnCount", count); }
+    static void setIptvFallbackWarnCount(int count) { sp().edit().putInt("iptvFallbackWarnCount", count).apply(); }
 
     // MARK: - Remote buttons
 

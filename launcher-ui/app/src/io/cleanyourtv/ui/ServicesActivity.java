@@ -128,8 +128,7 @@ public class ServicesActivity extends Activity {
         return !picked.isEmpty() && Providers.installed(this, picked) ? Providers.label(this, picked) : Ui.tr("Desligado", "Off");
     }
 
-    /** Any installed app, not only known IPTV players: there's no common intent signature to tell one apart
-     *  from any other app, unlike youtubePlayers() for the Trailer picker. */
+    /** Any installed app: nothing in an IPTV player's manifest tells it apart from other apps. */
     private void pickIptvPlayer(List<Providers.Provider> providers) {
         List<String> values = new ArrayList<>(), labels = new ArrayList<>();
         values.add("");

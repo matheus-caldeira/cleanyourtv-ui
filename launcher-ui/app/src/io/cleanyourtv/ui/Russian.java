@@ -111,6 +111,12 @@ final class Russian {
             case "Quotes widget": return "Виджет котировок";
             case "On": return "Вкл.";
             case "Off": return "Выкл.";
+            case "Search movie via IPTV": return "Найти фильм через IPTV";
+            case "Search show via IPTV": return "Найти сериал через IPTV";
+            case "IPTV app": return "Приложение IPTV";
+            case "Open anyway": return "Всё равно открыть";
+            case "Go to Settings": return "В настройки";
+            case "The app didn't answer the search. Open it anyway, or switch the app in Settings › Services?": return "Приложение не ответило на поиск. Открыть его всё равно или выбрать другое в Настройки › Services?";
             case "Shelf": return "Избранные приложения";
             case "on the shelf, place ": return "в избранном, позиция ";
             case "not on the shelf": return "не в избранном";
