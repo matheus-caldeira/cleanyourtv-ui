@@ -482,7 +482,7 @@ ulaştı, insanlar aynısını kendi TV'lerine yapmaya başladı ve yanıtları 
 bağlantılar çalışır.
 
 İki hafta sonra, 19–25 Ekim haftasında GitHub'ın 1 numaralı trend deposu oldu; 46 binden fazla yıldız, 5,7 bin
-fork, 14 günde 1,4 milyon görüntülenme ve 260 bin klon. Listeler artık 472 TV modelini ve 129 markayı kapsıyor.
+fork, 14 günde 1,4 milyon görüntülenme ve 260 bin klon. 14 Kasım itibarıyla 57 bin yıldız ve 7,4 bin fork. Listeler artık 472 TV modelini ve 129 markayı kapsıyor.
 Basındaki karşılığı: 546 makale (57 ülkeden) ve YouTube ile Bilibili'de 673 video, hepsi [docs/PRESS.md](docs/PRESS.md)
 içinde (rakamlar 14 Kasım 2026 itibarıyla).
 
