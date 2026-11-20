@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13 and newer: Screensaver back in :home, as on Android 9 and 10. -->
+<resources>
+    <string name="dream_process" translatable="false">:home</string>
+</resources>

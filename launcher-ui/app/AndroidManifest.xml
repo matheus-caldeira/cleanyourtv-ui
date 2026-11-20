@@ -162,9 +162,10 @@
             android:process=":home"
             android:exported="true" />
 
+        <!-- :home, except on Android 12, where it runs in the main process (res/values-v31/process.xml). -->
         <service
             android:name=".Screensaver"
-            android:process=":home"
+            android:process="@string/dream_process"
             android:enabled="@bool/dream_in_home"
             android:exported="true"
             android:label="CleanYourTV UI"
