@@ -479,4 +479,5 @@
         <item quantity="many">%1$d серіалів</item>
         <item quantity="other">%1$d серіалів</item>
     </plurals>
+    <string name="mute_navigation_sounds">"Вимкнути звуки навігації"</string>
 </resources>

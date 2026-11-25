@@ -28,6 +28,7 @@
   "weather": true,
   "show_crypto": false,
   "status_icons": false,
+  "mute_navigation_sounds": false,
   "currency": "BRL",
   "buttons": {
     "s395": "tmdb:watchlist",

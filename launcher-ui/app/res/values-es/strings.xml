@@ -174,4 +174,5 @@
     <string name="sleep_more">"15 minutos más"</string>
     <string name="sleep_keep_on">"Mantener el TV encendido"</string>
     <string name="sleep_now">"Apagar ahora"</string>
+    <string name="mute_navigation_sounds">"Silenciar sonidos de navegación"</string>
 </resources>

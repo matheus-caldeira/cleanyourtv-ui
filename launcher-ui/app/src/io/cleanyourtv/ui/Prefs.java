@@ -229,6 +229,9 @@ final class Prefs {
 
     static void setCurrency(String currency) { put("currency", currency.trim().toUpperCase(Locale.ROOT)); }
 
+    static boolean muteNavigationSounds() { return sp().getBoolean("muteNavigationSounds", false); }
+    static void setMuteNavigationSounds(boolean on) { put("muteNavigationSounds", on); }
+
     // MARK: - Widgets and coins
 
     static boolean weather() { return sp().getBoolean("weather", true); }

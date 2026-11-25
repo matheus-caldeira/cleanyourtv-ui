@@ -172,4 +172,5 @@
     <string name="sleep_more">"15 Minuten länger"</string>
     <string name="sleep_keep_on">"Fernseher anlassen"</string>
     <string name="sleep_now">"Jetzt ausschalten"</string>
+    <string name="mute_navigation_sounds">"Navigationstöne stummschalten"</string>
 </resources>

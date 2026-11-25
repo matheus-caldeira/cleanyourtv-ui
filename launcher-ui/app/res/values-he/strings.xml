@@ -367,4 +367,5 @@
     <string name="sleep_more">"עוד 15 דקות"</string>
     <string name="sleep_keep_on">"להשאיר את הטלוויזיה דולקת"</string>
     <string name="sleep_now">"לכבות עכשיו"</string>
+    <string name="mute_navigation_sounds">"השתקת צלילי ניווט"</string>
 </resources>

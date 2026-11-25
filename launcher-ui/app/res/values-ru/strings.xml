@@ -420,4 +420,5 @@
     <string name="sleep_more">"Ещё 15 минут"</string>
     <string name="sleep_keep_on">"Не выключать ТВ"</string>
     <string name="sleep_now">"Выключить сейчас"</string>
+    <string name="mute_navigation_sounds">"Отключить звуки навигации"</string>
 </resources>
