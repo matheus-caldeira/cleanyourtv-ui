@@ -693,11 +693,47 @@ public class DetailActivity extends Activity {
             JSONArray list = region.optJSONArray(type);
             for (int i = 0; list != null && i < list.length(); i++) {
                 JSONObject p = list.optJSONObject(i);
-                String app = Providers.app(c, p.optInt("provider_id"), p.optString("provider_name"));
-                if (app != null) return new String[] {app, p.optString("provider_name")};
+                String name = p.optString("provider_name");
+                String app = Providers.app(c, p.optInt("provider_id"), name);
+                if (app != null) return new String[] {app, preferredSubscription(c, region, name, type, app)};
             }
         }
         return null;
+    }
+
+    private static String preferredSubscription(Context c, JSONObject region, String name, String type, String app) {
+        if (app == null || (!"flatrate".equals(type) && !"ads".equals(type))) return name;
+        JSONArray subscriptions = region.optJSONArray("flatrate");
+        if (subscriptions == null) return name;
+        for (String preferred : preferredSubscriptions(name)) {
+            for (int i = 0; i < subscriptions.length(); i++) {
+                JSONObject offer = subscriptions.optJSONObject(i);
+                if (offer == null) continue;
+                String candidate = offer.optString("provider_name");
+                if (preferred.equalsIgnoreCase(candidate) && app.equals(Providers.app(c, offer.optInt("provider_id"), candidate))) {
+                    return candidate;
+                }
+            }
+        }
+        return name;
+    }
+
+    private static String[] preferredSubscriptions(String name) {
+        switch (name.toLowerCase(Locale.ROOT)) {
+            case "netflix with ads":
+            case "netflix standard with ads":
+                return new String[] {"Netflix"};
+            case "apple tv+":
+                return new String[] {"Apple TV"};
+            case "apple tv plus":
+                return new String[] {"Apple TV", "Apple TV+"};
+            case "apple tv amazon channel":
+            case "apple tv+ amazon channel":
+            case "apple tv plus amazon channel":
+                return new String[] {"Apple TV", "Apple TV+", "Apple TV Plus"};
+            default:
+                return new String[0];
+        }
     }
 
     private TvUi.Flow whereLine;
@@ -718,7 +754,11 @@ public class DetailActivity extends Activity {
                 JSONObject p = list.optJSONObject(i);
                 int pid = p.optInt("provider_id");
                 if (!added.add(pid + type[0])) continue;
-                whereLine.addView(chip(pid, p.optString("provider_name"), p.optString("logo_path"), type[1]));
+                String name = p.optString("provider_name");
+                String app = Providers.app(this, pid, name);
+                if (name.equals(preferredSubscription(this, region, name, type[0], app))) {
+                    whereLine.addView(chip(pid, name, p.optString("logo_path"), type[1]));
+                }
             }
         }
         if (whereLine.getChildCount() == 0) {
