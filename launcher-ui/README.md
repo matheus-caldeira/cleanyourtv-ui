@@ -149,6 +149,17 @@ a remote button runs `live`). Settings → Inputs also picks which inputs the dr
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
 
+## Custom currency pairs
+
+Settings → Home Settings → **My quotes** lets you add up to four currency pairs, such as
+`EUR/RON` or `USD/UAH`, and remove them later. The quotes card in the home screen’s drawer shows
+the rate and a green or red percentage badge alongside any enabled cryptocurrencies.
+
+Rates come from [Frankfurter](https://frankfurter.dev/) and are checked at most once an hour while
+the home screen is active. The percentage compares the latest two published rates, including across
+weekends and holidays. These are reference rates updated on business days. The last successful rates
+are cached for offline use. No currency pairs are configured initially.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).

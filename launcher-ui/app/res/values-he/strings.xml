@@ -367,4 +367,8 @@
     <string name="sleep_more">"עוד 15 דקות"</string>
     <string name="sleep_keep_on">"להשאיר את הטלוויזיה דולקת"</string>
     <string name="sleep_now">"לכבות עכשיו"</string>
+    <string name="my_quotes">השערים שלי</string>
+    <string name="add_currency_pair">הוספת צמד מטבעות</string>
+    <string name="invalid_currency_pair">הזינו צמד מטבעות כמו EUR/RON.</string>
+    <string name="duplicate_currency_pair">הצמד הזה כבר ברשימה.</string>
 </resources>

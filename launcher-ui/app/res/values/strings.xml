@@ -471,4 +471,8 @@
         <item quantity="one">%1$d show</item>
         <item quantity="other">%1$d shows</item>
     </plurals>
+    <string name="my_quotes">My quotes</string>
+    <string name="add_currency_pair">Add currency pair</string>
+    <string name="invalid_currency_pair">Enter a currency pair like EUR/RON.</string>
+    <string name="duplicate_currency_pair">This pair is already on the list.</string>
 </resources>

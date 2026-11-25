@@ -479,4 +479,8 @@
         <item quantity="many">%1$d серіалів</item>
         <item quantity="other">%1$d серіалів</item>
     </plurals>
+    <string name="my_quotes">Мої котирування</string>
+    <string name="add_currency_pair">Додати валютну пару</string>
+    <string name="invalid_currency_pair">Введіть валютну пару, наприклад EUR/RON.</string>
+    <string name="duplicate_currency_pair">Ця пара вже є у списку.</string>
 </resources>

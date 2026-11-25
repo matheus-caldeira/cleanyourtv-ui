@@ -420,4 +420,8 @@
     <string name="sleep_more">"Ещё 15 минут"</string>
     <string name="sleep_keep_on">"Не выключать ТВ"</string>
     <string name="sleep_now">"Выключить сейчас"</string>
+    <string name="my_quotes">Мои котировки</string>
+    <string name="add_currency_pair">Добавить валютную пару</string>
+    <string name="invalid_currency_pair">Введи валютную пару, например EUR/RON.</string>
+    <string name="duplicate_currency_pair">Эта пара уже в списке.</string>
 </resources>

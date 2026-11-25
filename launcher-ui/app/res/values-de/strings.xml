@@ -172,4 +172,8 @@
     <string name="sleep_more">"15 Minuten länger"</string>
     <string name="sleep_keep_on">"Fernseher anlassen"</string>
     <string name="sleep_now">"Jetzt ausschalten"</string>
+    <string name="my_quotes">Meine Kurse</string>
+    <string name="add_currency_pair">Währungspaar hinzufügen</string>
+    <string name="invalid_currency_pair">Gib ein Währungspaar wie EUR/RON ein.</string>
+    <string name="duplicate_currency_pair">Dieses Paar steht bereits in der Liste.</string>
 </resources>

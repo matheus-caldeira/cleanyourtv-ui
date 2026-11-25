@@ -174,4 +174,8 @@
     <string name="sleep_more">"15 minutos más"</string>
     <string name="sleep_keep_on">"Mantener el TV encendido"</string>
     <string name="sleep_now">"Apagar ahora"</string>
+    <string name="my_quotes">Mis cotizaciones</string>
+    <string name="add_currency_pair">Añadir par de divisas</string>
+    <string name="invalid_currency_pair">Introduce un par de divisas como EUR/RON.</string>
+    <string name="duplicate_currency_pair">Este par ya está en la lista.</string>
 </resources>

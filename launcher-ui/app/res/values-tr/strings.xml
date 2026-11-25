@@ -388,4 +388,8 @@
     <string name="sleep_more">"15 dakika daha"</string>
     <string name="sleep_keep_on">"TV açık kalsın"</string>
     <string name="sleep_now">"Şimdi kapat"</string>
+    <string name="my_quotes">Kurlarım</string>
+    <string name="add_currency_pair">Döviz çifti ekle</string>
+    <string name="invalid_currency_pair">EUR/RON gibi bir döviz çifti girin.</string>
+    <string name="duplicate_currency_pair">Bu çift zaten listede.</string>
 </resources>

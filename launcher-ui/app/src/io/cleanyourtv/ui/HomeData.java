@@ -21,6 +21,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
@@ -57,6 +59,39 @@ final class HomeData {
     /** BTC, ETH and SOL; in Brazilian reais also the dollar (USDT/BRL), which Binance doesn't list for most currencies. */
     static int coinCount() {
         return Prefs.quotes() ? active().length : 0;
+    }
+
+    static boolean quotesVisible() {
+        return Prefs.quotes() && (active().length > 0 || !Prefs.fxPairs().isEmpty());
+    }
+
+    static String normalizeFxPair(String input) {
+        String pair = input.trim().toUpperCase(Locale.ROOT).replaceAll("\\s*/\\s*", "/");
+        if (!pair.matches("[A-Z]{3}/[A-Z]{3}") || pair.substring(0, 3).equals(pair.substring(4))) return null;
+        try {
+            java.util.Currency.getInstance(pair.substring(0, 3));
+            java.util.Currency.getInstance(pair.substring(4));
+            return pair;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    static final class FxRate {
+        final String date;
+        final double rate, change;
+
+        FxRate(String date, double rate, double change) {
+            this.date = date;
+            this.rate = rate;
+            this.change = change;
+        }
+
+        String text() {
+            java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(Ui.locale());
+            format.setMaximumFractionDigits(6);
+            return format.format(rate);
+        }
     }
 
     private static volatile int[] activeCoins;
@@ -136,18 +171,99 @@ final class HomeData {
     final double[] prices = {Double.NaN, Double.NaN, Double.NaN, Double.NaN};
     /** 24 h change (%), in the same order. */
     final double[] changes = {Double.NaN, Double.NaN, Double.NaN, Double.NaN};
-    volatile long pricesAt, weatherAt;
+    volatile long pricesAt, weatherAt, fxUpdatedAt;
     volatile Weather weather = new Weather();
 
     private final SharedPreferences cache;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final List<Listener> listeners = new ArrayList<>();
-    private volatile boolean fetchingPrices, fetchingWeather;
+    private volatile boolean fetchingPrices, fetchingWeather, fetchingFx;
+    private List<String> requestedFx = java.util.Collections.emptyList();
+    private long fxAttempt;
+    private volatile Map<String, FxRate> fxRates = java.util.Collections.emptyMap();
+
+    FxRate fxRate(String pair) { return fxRates.get(pair); }
+
+    private static FxRate parseFx(String pair, JSONObject quote) throws Exception {
+        if (!(quote.getString("base") + "/" + quote.getString("quote")).equals(pair)) throw new IOException("Unexpected currency pair");
+        String date = quote.getString("date");
+        java.time.LocalDate.parse(date);
+        double rate = quote.getDouble("rate");
+        if (!Double.isFinite(rate) || rate <= 0) throw new IOException("Invalid exchange rate");
+        double previous = quote.optDouble("previous", Double.NaN);
+        double change = previous > 0 && Double.isFinite(previous) ? (rate / previous - 1) * 100 : Double.NaN;
+        return new FxRate(date, rate, Double.isFinite(change) ? change : Double.NaN);
+    }
+
+    private static JSONObject latestFx(String pair, JSONArray history) throws Exception {
+        JSONObject latest = null, previous = null;
+        for (int i = 0; i < history.length(); i++) {
+            JSONObject row = history.getJSONObject(i);
+            String date = parseFx(pair, row).date;
+            if (latest == null || date.compareTo(latest.getString("date")) > 0) {
+                previous = latest;
+                latest = row;
+            } else if (!date.equals(latest.getString("date"))
+                    && (previous == null || date.compareTo(previous.getString("date")) > 0)) {
+                previous = row;
+            }
+        }
+        if (latest == null) throw new IOException("No exchange rates");
+        if (previous != null) latest.put("previous", previous.getDouble("rate"));
+        return latest;
+    }
+
+    private void refreshFx(long now) {
+        if (!Prefs.quotes() || fetchingFx) return;
+        List<String> pairs = Prefs.fxPairs();
+        if (pairs.isEmpty() || (pairs.equals(requestedFx) && now >= fxAttempt && now - fxAttempt < 60 * 60_000L)) return;
+        requestedFx = pairs;
+        fxAttempt = now;
+        fetchingFx = true;
+        io.execute(() -> {
+            Map<String, FxRate> rates = new HashMap<>();
+            JSONObject saved = new JSONObject();
+            for (String pair : pairs) {
+                if (!pair.equals(normalizeFxPair(pair))) continue;
+                try {
+                    String from = java.time.LocalDate.now(java.time.ZoneOffset.UTC).minusDays(14).toString();
+                    String url = "https://api.frankfurter.dev/v2/rates?base=" + pair.substring(0, 3)
+                            + "&quotes=" + pair.substring(4) + "&from=" + from;
+                    JSONObject quote = latestFx(pair, new JSONArray(get(url)));
+                    rates.put(pair, parseFx(pair, quote));
+                    saved.put(pair, quote);
+                } catch (Exception e) {
+                    FxRate previous = fxRates.get(pair);
+                    if (previous != null) rates.put(pair, previous);
+                }
+            }
+            try {
+                JSONObject old = new JSONObject(cache.getString("fxRates", "{}"));
+                for (String pair : pairs) {
+                    if (!saved.has(pair) && old.has(pair)) saved.put(pair, old.getJSONObject(pair));
+                }
+            } catch (Exception ignored) {}
+            cache.edit().putString("fxRates", saved.toString()).apply();
+            fxRates = rates;
+            fxUpdatedAt = System.currentTimeMillis();
+            fetchingFx = false;
+            notifyListeners();
+        });
+    }
     private volatile long pricesFailedAt, weatherFailedAt;
 
     private HomeData(Context c) {
         cache = c.getSharedPreferences("homedata", Context.MODE_PRIVATE);
+        Map<String, FxRate> savedFx = new HashMap<>();
+        try {
+            JSONObject stored = new JSONObject(cache.getString("fxRates", "{}"));
+            for (String pair : Prefs.fxPairs()) {
+                JSONObject quote = stored.optJSONObject(pair);
+                if (quote != null) savedFx.put(pair, parseFx(pair, quote));
+            }
+        } catch (Exception ignored) {}
+        fxRates = savedFx;
         try {
             if (Prefs.quotes()) {
                 String p = cache.getString("prices", null);
@@ -224,6 +340,7 @@ final class HomeData {
                 }
             });
         }
+        refreshFx(now);
     }
 
     private static boolean failedRecently(long at, long now) {

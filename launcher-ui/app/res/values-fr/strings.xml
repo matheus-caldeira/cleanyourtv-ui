@@ -359,4 +359,8 @@
     <string name="sleep_more">"15 minutes de plus"</string>
     <string name="sleep_keep_on">"Garder la TV allumée"</string>
     <string name="sleep_now">"Éteindre maintenant"</string>
+    <string name="my_quotes">Mes cotations</string>
+    <string name="add_currency_pair">Ajouter une paire de devises</string>
+    <string name="invalid_currency_pair">Saisissez une paire de devises comme EUR/RON.</string>
+    <string name="duplicate_currency_pair">Cette paire figure déjà dans la liste.</string>
 </resources>
