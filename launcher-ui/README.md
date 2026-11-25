@@ -149,6 +149,10 @@ a remote button runs `live`). Settings → Inputs also picks which inputs the dr
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
 
+Explore’s side menu groups catalogue sections and saved filters first, followed by installed services.
+With **Show every service** enabled, unavailable services form a final group. Dividers separate the groups,
+and items can be reordered within their group. The existing twelve-service limit applies.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).
