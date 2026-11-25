@@ -624,6 +624,7 @@ public class SettingsActivity extends Activity {
             l.add("Ethereum");
             l.add("Solana");
             if (dollar()) l.add(Strings.get(R.string.dollar));
+            l.add(Strings.get(R.string.mute_navigation_sounds));
             return l.toArray(new String[0]);
         }
 
@@ -653,7 +654,8 @@ public class SettingsActivity extends Activity {
             v[QUOTES_ROW] = onOff(Prefs.quotes());
             v[NOW_PLAYING_ROW] = playingValue();
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
-            for (int i = COIN_ROWS; i < v.length; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
+            for (int i = COIN_ROWS; i < v.length - 1; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
+            v[v.length - 1] = onOff(Prefs.muteNavigationSounds());
             return v;
         }
 
@@ -721,6 +723,10 @@ public class SettingsActivity extends Activity {
                 int at = appPkgs.indexOf(RemoteKeys.action(b));
                 int next = at < 0 ? (dir > 0 ? 0 : n - 1) : (at + dir + n) % n;
                 Prefs.setButton(b.id, appPkgs.get(next));
+                return;
+            }
+            if (focus == settingLabels().length - 1) {
+                Prefs.setMuteNavigationSounds(!Prefs.muteNavigationSounds());
                 return;
             }
             switch (focus) {
@@ -1100,7 +1106,7 @@ public class SettingsActivity extends Activity {
                 rowRect.set(LIST_X * k, y, LIST_R * k, y + rowH * k);
                 float f = drawRowBackground(c, i);
                 rowLabel.setColor(blend(0xF2FFFFFF, INK, f));
-                boolean locked = i == NOW_PLAYING_ROW ? !playingAllowed : i >= COIN_ROWS && !Prefs.quotes();
+                boolean locked = i == NOW_PLAYING_ROW ? !playingAllowed : i >= COIN_ROWS && i < labels.length - 1 && !Prefs.quotes();
                 rowValue.setColor(blend(locked ? 0x59FFFFFF : 0xB3FFFFFF, locked ? 0x591C1C1E : 0xB31C1C1E, f));
                 if (locked) rowLabel.setColor(blend(0x73FFFFFF, 0x731C1C1E, f));
                 float base = rowRect.centerY() + Ui.halfCap(rowLabel);

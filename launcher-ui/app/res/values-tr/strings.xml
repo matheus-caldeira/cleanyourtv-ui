@@ -388,4 +388,5 @@
     <string name="sleep_more">"15 dakika daha"</string>
     <string name="sleep_keep_on">"TV açık kalsın"</string>
     <string name="sleep_now">"Şimdi kapat"</string>
+    <string name="mute_navigation_sounds">"Gezinme seslerini kapat"</string>
 </resources>

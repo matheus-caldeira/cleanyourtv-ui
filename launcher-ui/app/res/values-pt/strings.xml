@@ -462,4 +462,5 @@
         <item quantity="one">%1$d série</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
+    <string name="mute_navigation_sounds">"Silenciar sons de navegação"</string>
 </resources>
