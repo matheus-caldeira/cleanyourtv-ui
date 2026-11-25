@@ -462,4 +462,9 @@
         <item quantity="one">%1$d série</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
+    <string name="hide_purchases">"Ocultar opções de compra"</string>
+    <string name="hide_rentals">"Ocultar opções de aluguel"</string>
+    <string name="hide_services_without_installed_apps">"Ocultar serviços sem app instalado"</string>
+    <string name="no_official_streaming_apps_installed">"Nenhum serviço de streaming deste título tem app oficial instalado."</string>
+    <string name="no_viewing_options_match_your_filters">"Nenhuma opção de streaming com os filtros atuais."</string>
 </resources>

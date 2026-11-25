@@ -73,7 +73,6 @@ public class DetailActivity extends Activity {
     private TvUi.Flow actions;
     private final List<View> providerChips = new ArrayList<>();
     private View providerWatchButton;
-    private TextView noneText;
     private boolean streamingWatch, keyPressed;
     private int providerStamp;
     private int askGeneration;
@@ -701,35 +700,65 @@ public class DetailActivity extends Activity {
     }
 
     private TvUi.Flow whereLine;
+    private TextView whereEmpty;
+    private JSONObject watchRegion;
+    private boolean hideServicesWithoutApps;
+    private boolean hideRentals;
+    private boolean hidePurchases;
     private View iptvChip;
     private String iptvShown = "";
 
     private View whereToWatch(JSONObject region) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
+        whereEmpty = TvUi.text(this, k, 26, Ui.regular, TvUi.DIM);
+        box.addView(whereEmpty);
         whereLine = new TvUi.Flow(this, Math.round(18 * k), Math.round(18 * k));
         whereLine.setPadding(0, Math.round(14 * k), Math.round(96 * k), Math.round(14 * k));
+        box.addView(whereLine, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        watchRegion = region;
+        refreshProviderChips();
+        showIptvChip();
+        return box;
+    }
+
+    private void refreshProviderChips() {
+        hideServicesWithoutApps = Prefs.hideServicesWithoutApps();
+        hideRentals = Prefs.hideRentals();
+        hidePurchases = Prefs.hidePurchases();
+        int firstProvider = iptvChip == null ? 0 : 1;
+        chipNotes.clear();
+        whereLine.removeViews(firstProvider, whereLine.getChildCount() - firstProvider);
         String[][] types = {{"flatrate", Strings.get(R.string.subscription)}, {"free", Strings.get(R.string.free)},
                 {"ads", Strings.get(R.string.free_with_ads)}, {"rent", Strings.get(R.string.rent)}, {"buy", Strings.get(R.string.buy)}};
         Set<String> added = new HashSet<>();
+        boolean offersHidden = false;
         for (String[] type : types) {
-            JSONArray list = region == null ? null : region.optJSONArray(type[0]);
+            JSONArray list = watchRegion == null ? null : watchRegion.optJSONArray(type[0]);
+            if ((hideRentals && "rent".equals(type[0])) || (hidePurchases && "buy".equals(type[0]))) {
+                offersHidden |= list != null && list.length() > 0;
+                continue;
+            }
             for (int i = 0; list != null && i < list.length(); i++) {
                 JSONObject p = list.optJSONObject(i);
                 int pid = p.optInt("provider_id");
                 if (!added.add(pid + type[0])) continue;
-                whereLine.addView(chip(pid, p.optString("provider_name"), p.optString("logo_path"), type[1]));
+                String name = p.optString("provider_name");
+                if (Providers.showInWhereToWatch(this, name, hideServicesWithoutApps)) {
+                    whereLine.addView(chip(pid, name, p.optString("logo_path"), type[1]));
+                }
             }
         }
-        if (whereLine.getChildCount() == 0) {
-            TextView none = TvUi.text(this, k, 26, Ui.regular, TvUi.DIM);
-            none.setText(Strings.get(R.string.not_on_any_streaming_service_in_the_region_right_now));
-            noneText = none;
-            box.addView(none);
+        for (int i = providerChips.size() - 1; i >= 0; i--) whereLine.addView(providerChips.get(i), firstProvider);
+        if (offersHidden) {
+            whereEmpty.setText(Strings.get(R.string.no_viewing_options_match_your_filters));
+        } else if (hideServicesWithoutApps) {
+            whereEmpty.setText(Strings.get(R.string.no_official_streaming_apps_installed));
+        } else {
+            whereEmpty.setText(Strings.get(R.string.not_on_any_streaming_service_in_the_region_right_now));
         }
-        box.addView(whereLine, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        showIptvChip();
-        return box;
+        whereEmpty.setVisibility(whereLine.getChildCount() == firstProvider ? View.VISIBLE : View.GONE);
+        whereLine.setVisibility(whereLine.getChildCount() == 0 ? View.GONE : View.VISIBLE);
     }
 
     /** The IPTV app picked in Settings › Services leads the row. IPTV has no catalog TMDB can check, so the chip
@@ -1101,7 +1130,7 @@ public class DetailActivity extends Activity {
             }
         }
         firstProviderItem = first;
-        if (noneText != null) noneText.setVisibility(providerChips.isEmpty() ? View.VISIBLE : View.GONE);
+        whereEmpty.setVisibility(whereLine.getChildCount() == (iptvChip == null ? 0 : 1) ? View.VISIBLE : View.GONE);
         whereLine.setVisibility(whereLine.getChildCount() == 0 ? View.GONE : View.VISIBLE);
         if (first != null && !streamingWatch && actions != null) {
             WatchProviders.Item item = first;
@@ -1136,7 +1165,13 @@ public class DetailActivity extends Activity {
     @Override protected void onStart() {
         super.onStart();
         if (stopped) TvUi.restoreImages(getWindow().getDecorView());
-        if (stopped && whereLine != null && !Prefs.iptvPlayer().equals(iptvShown)) showIptvChip();   // back from Settings › Services
+        if (stopped && whereLine != null) {
+            if (hideServicesWithoutApps != Prefs.hideServicesWithoutApps() || hideRentals != Prefs.hideRentals()
+                    || hidePurchases != Prefs.hidePurchases()) {
+                refreshProviderChips();
+            }
+            if (!Prefs.iptvPlayer().equals(iptvShown)) showIptvChip();
+        }
         if (stopped && baseRequest != null && WatchProviders.stamp() != providerStamp) askProviders(false);   // an app was switched on, off or moved
         stopped = false;
     }

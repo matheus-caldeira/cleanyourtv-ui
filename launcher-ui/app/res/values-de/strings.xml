@@ -172,4 +172,9 @@
     <string name="sleep_more">"15 Minuten länger"</string>
     <string name="sleep_keep_on">"Fernseher anlassen"</string>
     <string name="sleep_now">"Jetzt ausschalten"</string>
+    <string name="hide_purchases">"Kaufangebote ausblenden"</string>
+    <string name="hide_services_without_installed_apps">"Dienste ohne installierte Apps ausblenden"</string>
+    <string name="hide_rentals">"Leihangebote ausblenden"</string>
+    <string name="no_viewing_options_match_your_filters">"Keine Wiedergabeoptionen entsprechen deinen Filtern."</string>
+    <string name="no_official_streaming_apps_installed">"Keine offiziellen Streaming-Apps installiert."</string>
 </resources>
