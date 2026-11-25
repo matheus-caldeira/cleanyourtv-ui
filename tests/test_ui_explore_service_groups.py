@@ -1,5 +1,6 @@
 """Execute production Java methods with small platform boundaries replaced for the JVM."""
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -18,6 +19,10 @@ class FeatureTest(unittest.TestCase):
     @unittest.skipUnless(JAVA, "JDK 17 required")
     def test_behavior(self):
         source = SOURCE.read_text(encoding="utf-8")
+        config = json.loads((SOURCE.parents[5] / "config.example.json").read_text(encoding="utf-8"))
+        self.assertIs(config["group_explore_services"], False)
+        prefs = (SOURCE.parent / "Prefs.java").read_text(encoding="utf-8")
+        self.assertIn('getBoolean("groupExploreServices", false)', prefs)
         production = (method(source, "    private static final class Service {")
                 + method(source, "    private List<String> order() {")
                 + method(source, "    private int menuGroup(")
@@ -25,6 +30,10 @@ class FeatureTest(unittest.TestCase):
                 + method(source, "    private void move("))
         program = """import java.util.*;
 class FeatureCheck {
+    static class Prefs {
+        static boolean grouped = true;
+        static boolean groupExploreServices() { return grouped; }
+    }
     static final String SERVICE = "service:";
     static final String[] MOVABLE = {"movie", "tv", "categories"};
     List<Service> services;
@@ -62,7 +71,13 @@ class FeatureCheck {
         menu.services = Arrays.asList(app("apple", true), app("offline", true), app("netflix", false));
         equal(Arrays.asList("f:comedy", "movie", "tv", "categories",
                             "service:apple", "service:offline", "service:netflix"), menu.order());
+        Prefs.grouped = false;
+        menu.stored = Arrays.asList("service:netflix", "movie", "service:apple", "f:comedy", "tv");
+        equal(Arrays.asList("service:netflix", "movie", "service:apple", "f:comedy", "tv",
+                            "categories", "service:offline"), menu.order());
+        Prefs.grouped = true;
         menu.services = null;
+        menu.stored = Arrays.asList("f:comedy", "movie", "tv", "categories");
         equal(Arrays.asList("f:comedy", "movie", "tv", "categories"), menu.order());
     }
 }

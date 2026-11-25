@@ -129,7 +129,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
     private List<Section> sections = new ArrayList<>();
     private volatile List<Service> services;
     private int providersStamp;
-    private boolean menuShowsAll;
+    private boolean menuShowsAll, menuGrouped;
 
     /** A streaming service with an app: TMDB lists some more than once ("with ads"), so one entry per app. */
     private static final class Service {
@@ -281,7 +281,8 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         super.onResume();
         if (hero != null && !menuOpen) restartHero();
         if (resumedOnce && Tmdb.hasKey()) {   // back from a title page: the list, the picks and what was seen may have changed
-            if (providersStamp != Prefs.providersStamp() || menuShowsAll != Prefs.showAllProviders()) {
+            if (providersStamp != Prefs.providersStamp() || menuShowsAll != Prefs.showAllProviders()
+                    || menuGrouped != Prefs.groupExploreServices()) {
                 services = null;
                 loadMenuServices();
             }
@@ -685,7 +686,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
     }
 
     private int menuGroup(String id) {
-        if (!id.startsWith(SERVICE)) return 0;
+        if (!Prefs.groupExploreServices() || !id.startsWith(SERVICE)) return 0;
         Service s = service(id);
         return s != null && s.installed ? 1 : 2;
     }
@@ -2638,10 +2639,11 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
             AppLog.w("explore services: " + e.getMessage());
             return out;   // not kept: the next page asks again
         }
-        out.sort(java.util.Comparator.comparing(s -> !s.installed));
+        if (Prefs.groupExploreServices()) out.sort(java.util.Comparator.comparing(s -> !s.installed));
         if (out.size() > 12) out = new ArrayList<>(out.subList(0, 12));
         providersStamp = Prefs.providersStamp();
         menuShowsAll = Prefs.showAllProviders();
+        menuGrouped = Prefs.groupExploreServices();
         services = out;
         return out;
     }
