@@ -126,7 +126,7 @@ class HomeScreen(unittest.TestCase):
 
     def test_the_picks_step_aside(self):
         self.assertIn("return !watchMode && Recs.hasKey(getContext());", method(self.view, "    private boolean picksOn() {"))
-        self.assertIn("tabPicks[t] = watchMode ? new ArrayList<Recs.Pick>() : recs.all(TAB_KIND[t]);",
+        self.assertIn("List<Recs.Pick> available = watchMode ? new ArrayList<Recs.Pick>() : recs.all(TAB_KIND[t]);",
                       method(self.view, "    private void updateCards() {"))
 
     def test_ok_resumes_through_the_link(self):

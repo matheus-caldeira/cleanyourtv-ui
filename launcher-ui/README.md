@@ -149,6 +149,9 @@ a remote button runs `live`). Settings → Inputs also picks which inputs the dr
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
 
+Focusing a streaming app on the home shelf filters the top recommendation cards to that app’s existing picks.
+When it has no picks, the general recommendations are shown. Continue Watching keeps its own cards.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).
