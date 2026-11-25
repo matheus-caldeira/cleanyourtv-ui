@@ -471,4 +471,6 @@
         <item quantity="one">%1$d show</item>
         <item quantity="other">%1$d shows</item>
     </plurals>
+    <string name="voice_search">"Voice search"</string>
+    <string name="voice_search_unavailable">"Voice search is unavailable on this TV."</string>
 </resources>

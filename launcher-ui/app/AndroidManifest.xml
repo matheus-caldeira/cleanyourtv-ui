@@ -75,6 +75,9 @@
         <intent>
             <action android:name="io.cleanyourtv.action.WATCH_PROVIDER" />
         </intent>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
     </queries>
 
     <uses-feature android:name="android.software.leanback" android:required="false" />

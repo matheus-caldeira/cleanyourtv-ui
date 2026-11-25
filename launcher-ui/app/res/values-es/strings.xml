@@ -174,4 +174,6 @@
     <string name="sleep_more">"15 minutos más"</string>
     <string name="sleep_keep_on">"Mantener el TV encendido"</string>
     <string name="sleep_now">"Apagar ahora"</string>
+    <string name="voice_search">"Búsqueda por voz"</string>
+    <string name="voice_search_unavailable">"La búsqueda por voz no está disponible en este televisor."</string>
 </resources>

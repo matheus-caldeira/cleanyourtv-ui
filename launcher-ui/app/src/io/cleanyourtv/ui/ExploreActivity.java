@@ -2,6 +2,7 @@ package io.cleanyourtv.ui;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +12,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.speech.RecognizerIntent;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -65,6 +67,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
             SAVED = "f:";
     /** The menu's items the person can move or hide, in their first order (services and saved filters follow). */
     private static final String[] MOVABLE = {TOP, MOVIES, SHOWS, KIDS, ANIME, CATS};
+    private static final int VOICE_SEARCH = 1;
     private static final long HERO_MS = 9000;
     private static final int HERO_H = 720, HERO_BLEED = 144, INSET = 120;
 
@@ -273,7 +276,12 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
             services();
             main.post(() -> { if (!isFinishing()) fillMenu(); });
         });
-        showPage(fromBookmark ? LIST : HOME);
+        showPage(state != null && state.getBoolean(SEARCH) ? SEARCH : fromBookmark ? LIST : HOME);
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putBoolean(SEARCH, SEARCH.equals(current));
     }
 
     @Override protected void onResume() {
@@ -815,6 +823,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         main.removeCallbacks(heroTick);
         main.removeCallbacks(searchSoon);
         main.removeCallbacks(tabSoon);
+        searchField = null;
         page.removeAllViews();
         scroll.top();
         restyleMenu();
@@ -1783,6 +1792,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
 
     // MARK: - Search and categories: the same filter
 
+    private EditText searchField;
     private Filter filter;
     private String savedId;
     private LinearLayout chips;
@@ -1804,7 +1814,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         bar.setPadding(0, Math.round(16 * k), 0, 0);
         View first;
         if (search) {
-            EditText field = new EditText(this);
+            EditText field = searchField = new EditText(this);
             field.setSingleLine(true);
             field.setTextSize(TypedValue.COMPLEX_UNIT_PX, 34 * k);
             field.setTextColor(TvUi.INK);
@@ -1826,12 +1836,15 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
             });
             field.setOnEditorActionListener((v, action, event) -> {
                 ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
-                main.removeCallbacks(searchSoon);
-                remember(filter.query);
-                runFilter();
+                submitSearch();
                 return true;
             });
             bar.addView(field, new LinearLayout.LayoutParams(Math.round(1000 * k), ViewGroup.LayoutParams.WRAP_CONTENT));
+            View mic = TvUi.iconButton(this, k, "mic", null, v -> startVoiceSearch());
+            mic.setContentDescription(Strings.get(R.string.voice_search));
+            LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            ml.leftMargin = Math.round(20 * k);
+            bar.addView(mic, ml);
             first = field;
         } else {
             first = null;
@@ -1873,6 +1886,40 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         showChips();
         runFilter();
         (first != null ? first : filterButton).requestFocus();
+    }
+
+    private void startVoiceSearch() {
+        Intent speech = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Ui.locale().toLanguageTag());
+        Intent google = new Intent(speech).setPackage("com.google.android.tts");
+        if (google.resolveActivity(getPackageManager()) != null) speech = google;
+        try {
+            startActivityForResult(speech, VOICE_SEARCH);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, Strings.get(R.string.voice_search_unavailable),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request != VOICE_SEARCH || result != RESULT_OK || data == null
+                || !SEARCH.equals(current) || searchField == null) return;
+        List<String> words = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+        if (words == null || words.isEmpty() || words.get(0) == null) return;
+        String query = words.get(0).trim();
+        if (query.isEmpty()) return;
+        searchField.setText(query);
+        searchField.setSelection(query.length());
+        submitSearch();
+    }
+
+    private void submitSearch() {
+        main.removeCallbacks(searchSoon);
+        remember(filter.query);
+        runFilter();
     }
 
     /** The filter's parts as chips under the bar; OK on one takes it off. */

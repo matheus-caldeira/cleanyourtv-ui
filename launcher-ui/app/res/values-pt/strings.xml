@@ -462,4 +462,6 @@
         <item quantity="one">%1$d série</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
+    <string name="voice_search">"Pesquisa por voz"</string>
+    <string name="voice_search_unavailable">"A pesquisa por voz não está disponível nesta TV."</string>
 </resources>

@@ -149,6 +149,10 @@ a remote button runs `live`). Settings → Inputs also picks which inputs the dr
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
 
+Explore’s Search page has a microphone button. Recognized speech fills the query field and starts the search.
+Google Speech Services is preferred when installed, with the system speech activity as a fallback.
+Recognition is handled by that app using its own permissions.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).

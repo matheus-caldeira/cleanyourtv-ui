@@ -172,4 +172,6 @@
     <string name="sleep_more">"15 Minuten länger"</string>
     <string name="sleep_keep_on">"Fernseher anlassen"</string>
     <string name="sleep_now">"Jetzt ausschalten"</string>
+    <string name="voice_search">"Sprachsuche"</string>
+    <string name="voice_search_unavailable">"Die Sprachsuche ist auf diesem Fernseher nicht verfügbar."</string>
 </resources>

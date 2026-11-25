@@ -388,4 +388,6 @@
     <string name="sleep_more">"15 dakika daha"</string>
     <string name="sleep_keep_on">"TV açık kalsın"</string>
     <string name="sleep_now">"Şimdi kapat"</string>
+    <string name="voice_search">"Sesli arama"</string>
+    <string name="voice_search_unavailable">"Bu televizyonda sesli arama kullanılamıyor."</string>
 </resources>

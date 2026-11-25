@@ -479,4 +479,6 @@
         <item quantity="many">%1$d серіалів</item>
         <item quantity="other">%1$d серіалів</item>
     </plurals>
+    <string name="voice_search">"Голосовий пошук"</string>
+    <string name="voice_search_unavailable">"На цьому телевізорі голосовий пошук недоступний."</string>
 </resources>
