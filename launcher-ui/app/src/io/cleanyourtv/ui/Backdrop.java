@@ -58,6 +58,16 @@ final class Backdrop {
         nightImage = night == null ? null : Bitmap.createBitmap(night, FW, FH, Bitmap.Config.ARGB_8888);
     }
 
+    /** Retained bitmap and pixel-array bytes, for the shared home cache's budget. */
+    long bytes() {
+        long total = 0;
+        for (Bitmap b : new Bitmap[]{image, wide, tall, lightImage, nightImage})
+            if (b != null) total += b.getAllocationByteCount();
+        for (int[] pixels : new int[][]{frost, glass, light, lightGlass, nightFrost, nightGlass})
+            if (pixels != null) total += (long) pixels.length * 4;
+        return total;
+    }
+
     static Backdrop make(Bitmap src, boolean forLight) {
         Bitmap out = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(out);

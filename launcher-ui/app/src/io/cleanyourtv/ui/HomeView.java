@@ -3528,21 +3528,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 retarget(false);
             }
         }
-        // Recs keeps the 10 images used last: this page and the two it can turn to (9), or with the focus on the tabs,
-        // this page and the other tabs' first pages, so the next move never waits for a photo.
-        for (Recs.Pick p : cards) recs.backdrop(p);
+        // Visible cards lead the image queue; neighbours warm within its memory budget.
+        List<Recs.Pick> near = new ArrayList<>();
         if (pages > 0 && total > 1) {
-            List<Recs.Pick> near = new ArrayList<>();
             if (zone == Z_TOP) {
                 for (int t = 0; t < 3; t++) if (t != tab && tabFirst[t + 1] > tabFirst[t]) near.addAll(pageCards(tabFirst[t]));
             } else {
                 near.addAll(pageCards(Math.floorMod(page + 1, total)));
                 near.addAll(pageCards(Math.floorMod(page - 1, total)));
             }
-            for (Recs.Pick p : near) recs.backdrop(p);
-            near.addAll(cards);
-            recs.details(near);
         }
+        recs.prepareImages(Integer.toString(tab), cards, near);
+        near.addAll(cards);
+        recs.details(near);
         Backdrop b = cards.isEmpty() ? null : recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (cards.isEmpty() || b != null) showBackdrop(b);
         heroDirty = true;
