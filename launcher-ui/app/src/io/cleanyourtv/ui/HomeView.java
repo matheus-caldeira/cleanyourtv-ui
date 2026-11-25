@@ -2128,7 +2128,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** Sets the springs' targets from the current focus (snap: no animation). */
     private void retarget(boolean snap) {
         if (!sheetOpen && zone == Z_SHELF && shelfIndex < shelf.size()) {
-            String pkg = shelf.get(shelfIndex).pkg;
+            String pkg = Prefs.appRecommendations() ? shelf.get(shelfIndex).pkg : "";
             if (pkg == null) pkg = "";
             if (!pkg.equals(recommendationPackage)) {
                 recommendationPackage = pkg;
@@ -3524,7 +3524,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void updateCards() {
         // Where we are in the tab: a new list (every hour, or details that drop a pick) keeps the tab and the page.
         int inTab = Math.max(0, page - tabFirst[tab]);
-        appRecommendations = !watchMode && !Recs.forApp(recs.all(null), recommendationPackage).isEmpty();
+        appRecommendations = Prefs.appRecommendations() && !watchMode && !Recs.forApp(recs.all(null), recommendationPackage).isEmpty();
         for (int t = 0; t < 3; t++) {
             List<Recs.Pick> available = watchMode ? new ArrayList<Recs.Pick>() : recs.all(TAB_KIND[t]);
             tabPicks[t] = appRecommendations ? Recs.forApp(available, recommendationPackage) : available;

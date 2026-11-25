@@ -92,6 +92,7 @@ final class TvConfig {
             }
             if (o.has("temperature")) Prefs.setTemperature(o.getString("temperature"));
             if (o.has("weather")) Prefs.setWeather(o.getBoolean("weather"));
+            if (o.has("app_recommendations")) Prefs.setAppRecommendations(o.getBoolean("app_recommendations"));
             if (o.has("status_icons")) Prefs.setStatusIcons(o.getBoolean("status_icons"));
             if (o.has("language")) Prefs.setLanguage(o.getString("language"));
             if (o.has("clock")) Prefs.setClockFormat(o.getString("clock"));

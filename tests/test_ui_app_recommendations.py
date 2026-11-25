@@ -1,5 +1,6 @@
 """Execute production Java methods with small platform boundaries replaced for the JVM."""
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -18,6 +19,10 @@ class FeatureTest(unittest.TestCase):
     @unittest.skipUnless(JAVA, "JDK 17 required")
     def test_behavior(self):
         source = SOURCE.read_text(encoding="utf-8")
+        config = json.loads((SOURCE.parents[5] / "config.example.json").read_text(encoding="utf-8"))
+        self.assertIs(config["app_recommendations"], False)
+        prefs = (SOURCE.parent / "Prefs.java").read_text(encoding="utf-8")
+        self.assertIn('getBoolean("appRecommendations", false)', prefs)
         production = (method(source, "    static final class Pick {") + method(source, "    static List<Pick> forApp("))
         program = """import java.util.*;
 class FeatureCheck {
