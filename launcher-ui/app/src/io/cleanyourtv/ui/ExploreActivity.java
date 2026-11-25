@@ -127,16 +127,20 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
     private final Map<Integer, View> placed = new HashMap<>();
     private final Map<Integer, String> placedKeys = new HashMap<>();
     private List<Section> sections = new ArrayList<>();
-    private List<Service> services;
+    private volatile List<Service> services;
+    private int providersStamp;
+    private boolean menuShowsAll, menuGrouped;
 
     /** A streaming service with an app: TMDB lists some more than once ("with ads"), so one entry per app. */
     private static final class Service {
         final String key, name, ids, logo;
-        Service(String key, String name, String ids, String logo) {
+        final boolean installed;
+        Service(String key, String name, String ids, String logo, boolean installed) {
             this.key = key;
             this.name = name;
             this.ids = ids;
             this.logo = logo;
+            this.installed = installed;
         }
     }
 
@@ -269,10 +273,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
             header(Strings.get(R.string.explore), Strings.get(R.string.tmdb_key_missing_build_hint));
             return;
         }
-        io.execute(() -> {
-            services();
-            main.post(() -> { if (!isFinishing()) fillMenu(); });
-        });
+        loadMenuServices();
         showPage(fromBookmark ? LIST : HOME);
     }
 
@@ -280,6 +281,11 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         super.onResume();
         if (hero != null && !menuOpen) restartHero();
         if (resumedOnce && Tmdb.hasKey()) {   // back from a title page: the list, the picks and what was seen may have changed
+            if (providersStamp != Prefs.providersStamp() || menuShowsAll != Prefs.showAllProviders()
+                    || menuGrouped != Prefs.groupExploreServices()) {
+                services = null;
+                loadMenuServices();
+            }
             refreshPersonal();
             TvUi.refreshSeen(page);
         }
@@ -423,11 +429,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         menuItem(menu, SEARCH, Strings.get(R.string.search), null);
         menuItem(menu, HOME, Strings.get(R.string.home), null);
         menuItem(menu, LIST, Strings.get(R.string.my_list), null);
-        View line = new View(this);
-        line.setBackgroundColor(0x1FFFFFFF);
-        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, Math.round(2 * k)));
-        ll.setMargins(Math.round(26 * k), Math.round(14 * k), Math.round(26 * k), Math.round(14 * k));
-        menu.addView(line, ll);
+        menuDivider(menu);
         menuMovable = new LinearLayout(this);
         menuMovable.setOrientation(LinearLayout.VERTICAL);
         menu.addView(menuMovable);
@@ -438,12 +440,25 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         return box;
     }
 
+    private void menuDivider(LinearLayout into) {
+        View line = new View(this);
+        line.setBackgroundColor(0x1FFFFFFF);
+        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, Math.round(2 * k)));
+        ll.setMargins(Math.round(26 * k), Math.round(14 * k), Math.round(26 * k), Math.round(14 * k));
+        into.addView(line, ll);
+    }
+
     /** The movable part, in the person's order, without what they hid. */
     private void fillMenu() {
         for (int i = 0; i < menuMovable.getChildCount(); i++) menuItems.values().remove(menuMovable.getChildAt(i).getTag());
         menuMovable.removeAllViews();
+        Set<String> hidden = hidden();
+        int previousGroup = -1;
         for (String id : order()) {
-            if (hidden().contains(id)) continue;
+            if (hidden.contains(id)) continue;
+            int group = menuGroup(id);
+            if (previousGroup >= 0 && group != previousGroup) menuDivider(menuMovable);
+            previousGroup = group;
             Service s = id.startsWith(SERVICE) ? service(id) : null;
             menuItem(menuMovable, id, label(id), s != null ? s.logo : null);
         }
@@ -666,7 +681,14 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
         List<String> out = new ArrayList<>();
         for (String id : readList("order")) if (all.contains(id) && !out.contains(id)) out.add(id);
         for (String id : all) if (!out.contains(id)) out.add(id);
+        out.sort(java.util.Comparator.comparingInt(this::menuGroup));
         return out;
+    }
+
+    private int menuGroup(String id) {
+        if (!Prefs.groupExploreServices() || !id.startsWith(SERVICE)) return 0;
+        Service s = service(id);
+        return s != null && s.installed ? 1 : 2;
     }
 
     private Set<String> hidden() {
@@ -682,7 +704,7 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
     private void move(String id, int by) {
         List<String> o = order();
         int i = o.indexOf(id), j = i + by;
-        if (i < 0 || j < 0 || j >= o.size()) return;
+        if (i < 0 || j < 0 || j >= o.size() || menuGroup(id) != menuGroup(o.get(j))) return;
         o.set(i, o.get(j));
         o.set(j, id);
         writeList("order", o);
@@ -2222,11 +2244,11 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
             row.setOnClickListener(v -> {
                 List<String> labels = new ArrayList<>();
                 List<Runnable> actions = new ArrayList<>();
-                if (at > 0) {
+                if (at > 0 && menuGroup(id) == menuGroup(ids.get(at - 1))) {
                     labels.add(Strings.get(R.string.move_up));
                     actions.add(() -> move(id, -1));
                 }
-                if (at < ids.size() - 1) {
+                if (at < ids.size() - 1 && menuGroup(id) == menuGroup(ids.get(at + 1))) {
                     labels.add(Strings.get(R.string.move_down));
                     actions.add(() -> move(id, 1));
                 }
@@ -2588,6 +2610,13 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
 
     // MARK: - Services and TMDB helpers
 
+    private void loadMenuServices() {
+        io.execute(() -> {
+            services();
+            main.post(() -> { if (!isFinishing() && !isDestroyed()) fillMenu(); });
+        });
+    }
+
     /** The services with an app (or all, with "show all"), one per app, most watched first. Asked once. */
     private synchronized List<Service> services() {
         if (services != null) return services;
@@ -2599,18 +2628,22 @@ public class ExploreActivity extends Activity implements TitleMenu.Host {
                 String app = Providers.app(this, p.id, p.name);
                 String key = app != null ? app : "p" + p.id;
                 if (!byApp.containsKey(key)) {
-                    byApp.put(key, new Service(key, p.name, "", p.logo));
+                    byApp.put(key, new Service(key, p.name, "", p.logo, app != null));
                     ids.put(key, new StringBuilder());
                 }
                 StringBuilder b = ids.get(key);
                 b.append(b.length() == 0 ? "" : "|").append(p.id);
             }
-            for (Service s : byApp.values()) out.add(new Service(s.key, s.name, ids.get(s.key).toString(), s.logo));
+            for (Service s : byApp.values()) out.add(new Service(s.key, s.name, ids.get(s.key).toString(), s.logo, s.installed));
         } catch (Exception e) {
             AppLog.w("explore services: " + e.getMessage());
             return out;   // not kept: the next page asks again
         }
+        if (Prefs.groupExploreServices()) out.sort(java.util.Comparator.comparing(s -> !s.installed));
         if (out.size() > 12) out = new ArrayList<>(out.subList(0, 12));
+        providersStamp = Prefs.providersStamp();
+        menuShowsAll = Prefs.showAllProviders();
+        menuGrouped = Prefs.groupExploreServices();
         services = out;
         return out;
     }

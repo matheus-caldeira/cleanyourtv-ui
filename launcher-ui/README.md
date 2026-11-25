@@ -130,6 +130,7 @@ logged, never guessed. [`config.example.json`](config.example.json) has them all
 | `screensaver` | `photos`, `aurora`, `google` | `google` is Google TV's own screensaver (a Google Photos album): it needs dreamx enabled and `adb shell pm grant io.cleanyourtv.ui android.permission.WRITE_SECURE_SETTINGS`, or only the choice is saved. |
 | `weather` | `true` / `false` | The weather widget. |
 | `show_crypto` | `true` / `false` | The quotes widget (Binance). |
+| `group_explore_services` | `true` / `false` | Group Explore’s side menu into catalogue sections, installed services and other services. Off by default. |
 | `status_icons` | `true` / `false` | Small icons next to the round buttons at the top: Wi-Fi or Ethernet, and a USB drive (or SD card) when one is mounted. Off by default. No Bluetooth icon: reading it needs the Bluetooth permission, which the app does not ask for. |
 | `currency` | three letters (`USD`, `BRL`, `EUR`, `TRY`) | The quotes' currency. |
 | `buttons` | `{ "s395": action, "k4062": action }` | A remote button by scancode (`s`) or keycode (`k`), from `tools/tv.py 'getevent -lt'`. |
@@ -148,6 +149,10 @@ or `""` for what the button did before.
 a remote button runs `live`). Settings → Inputs also picks which inputs the drawer shows, and in what order: OK shows or
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
+
+With `"group_explore_services": true` in config.json, explore’s side menu groups catalogue sections and saved filters first, followed by installed services.
+With **Show every service** enabled, unavailable services form a final group. Dividers separate the groups,
+and items can be reordered within their group. The existing twelve-service limit applies.
 
 ## remote.json
 
