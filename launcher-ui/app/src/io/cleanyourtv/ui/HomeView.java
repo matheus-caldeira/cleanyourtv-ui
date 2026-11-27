@@ -153,6 +153,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     // At the top: tabs (0 to 2) and icon-only buttons (3 on, HomeApps.topButtons); the three cards
     private int tab, topIndex, cardIndex;
+    private String recommendationPackage = "";
+    private boolean appRecommendations;
     private int widgetIndex;    // with TalkBack on, the drawer's weather (0) or quotes (1) card can take the focus
     private List<Recs.Pick> cards = new ArrayList<>();
     // One flat run of pages, three cards each: every full page of Explore, then of Movies, then of Shows, and round
@@ -2125,6 +2127,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Sets the springs' targets from the current focus (snap: no animation). */
     private void retarget(boolean snap) {
+        if (!sheetOpen && zone == Z_SHELF && shelfIndex < shelf.size()) {
+            String pkg = Prefs.appRecommendations() ? shelf.get(shelfIndex).pkg : "";
+            if (pkg == null) pkg = "";
+            if (!pkg.equals(recommendationPackage)) {
+                recommendationPackage = pkg;
+                page = tabFirst[tab];
+                updateCards();
+                heroDirty = true;
+            }
+        }
         // Only the group whose focus changed is redrawn (moving along the shelf doesn't redraw the hero or capsule).
         boolean tilesChanged = aim(tileFocus, !sheetOpen && zone == Z_SHELF ? shelfIndex : -1, snap);
         boolean statusChanged = aim(statusFocus, !sheetOpen && zone == Z_STATUS ? statusIndex : -1, snap);
@@ -3512,8 +3524,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void updateCards() {
         // Where we are in the tab: a new list (every hour, or details that drop a pick) keeps the tab and the page.
         int inTab = Math.max(0, page - tabFirst[tab]);
+        appRecommendations = Prefs.appRecommendations() && !watchMode && !Recs.forApp(recs.all(null), recommendationPackage).isEmpty();
         for (int t = 0; t < 3; t++) {
-            tabPicks[t] = watchMode ? new ArrayList<Recs.Pick>() : recs.all(TAB_KIND[t]);   // Continue Watching: no picks
+            List<Recs.Pick> available = watchMode ? new ArrayList<Recs.Pick>() : recs.all(TAB_KIND[t]);
+            tabPicks[t] = appRecommendations ? Recs.forApp(available, recommendationPackage) : available;
             int pages = tabPicks[t].isEmpty() ? 0 : Math.max(1, tabPicks[t].size() / 3);
             tabFirst[t + 1] = tabFirst[t] + pages;
         }
@@ -3627,7 +3641,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
             return;
         }
-        String hello = Strings.get(R.string.for_you);
+        String hello = appRecommendations && shelfIndex < shelf.size()
+                ? shelf.get(shelfIndex).label : Strings.get(R.string.for_you);
         float helloX = Ui.he ? CONTENT_R * k - lTitle.measureText(hello) : MARGIN * k - Ui.leftBearing(lTitle, hello);
         c.drawText(hello, helloX, L_TITLE_BASE * k, lTitle);
         // Text tabs (the selected one in bold, in the main text color); with focus on the tabs, the selected one gets
