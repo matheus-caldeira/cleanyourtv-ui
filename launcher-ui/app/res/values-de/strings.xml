@@ -181,4 +181,6 @@
     <string name="add_currency_pair">Währungspaar hinzufügen</string>
     <string name="invalid_currency_pair">Gib ein Währungspaar wie EUR/RON ein.</string>
     <string name="duplicate_currency_pair">Dieses Paar steht bereits in der Liste.</string>
+    <string name="voice_search">"Sprachsuche"</string>
+    <string name="voice_search_unavailable">"Die Sprachsuche ist auf diesem Fernseher nicht verfügbar."</string>
 </resources>

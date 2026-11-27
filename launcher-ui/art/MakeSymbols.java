@@ -10,6 +10,11 @@ import java.io.File;
  */
 public class MakeSymbols {
     public static void main(String[] args) throws Exception {
+        write("mic", g -> {
+            g.draw(new RoundRectangle2D.Double(57, 15, 36, 72, 36, 36));
+            g.draw(new Arc2D.Double(35, 27, 80, 86, 180, 180, Arc2D.OPEN));
+            g.draw(new Line2D.Double(75, 113, 75, 136));
+        });
         write("search", g -> {
             g.draw(new Ellipse2D.Double(22, 22, 78, 78));
             g.draw(new Line2D.Double(90, 90, 128, 128));

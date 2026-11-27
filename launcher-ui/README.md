@@ -165,6 +165,10 @@ the home screen is active. The percentage compares the latest two published rate
 weekends and holidays. These are reference rates updated on business days. The last successful rates
 are cached for offline use. No currency pairs are configured initially.
 
+Explore’s Search page has a microphone button. Recognized speech fills the query field and starts the search.
+Google Speech Services is preferred when installed, with the system speech activity as a fallback.
+Recognition is handled by that app using its own permissions.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).

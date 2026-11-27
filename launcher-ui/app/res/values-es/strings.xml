@@ -183,4 +183,6 @@
     <string name="add_currency_pair">Añadir par de divisas</string>
     <string name="invalid_currency_pair">Introduce un par de divisas como EUR/RON.</string>
     <string name="duplicate_currency_pair">Este par ya está en la lista.</string>
+    <string name="voice_search">"Búsqueda por voz"</string>
+    <string name="voice_search_unavailable">"La búsqueda por voz no está disponible en este televisor."</string>
 </resources>

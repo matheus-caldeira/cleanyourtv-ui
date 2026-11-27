@@ -368,4 +368,6 @@
     <string name="add_currency_pair">Ajouter une paire de devises</string>
     <string name="invalid_currency_pair">Saisissez une paire de devises comme EUR/RON.</string>
     <string name="duplicate_currency_pair">Cette paire figure déjà dans la liste.</string>
+    <string name="voice_search">"Recherche vocale"</string>
+    <string name="voice_search_unavailable">"La recherche vocale est indisponible sur ce téléviseur."</string>
 </resources>

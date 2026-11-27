@@ -480,4 +480,6 @@
     <string name="add_currency_pair">Add currency pair</string>
     <string name="invalid_currency_pair">Enter a currency pair like EUR/RON.</string>
     <string name="duplicate_currency_pair">This pair is already on the list.</string>
+    <string name="voice_search">"Voice search"</string>
+    <string name="voice_search_unavailable">"Voice search is unavailable on this TV."</string>
 </resources>

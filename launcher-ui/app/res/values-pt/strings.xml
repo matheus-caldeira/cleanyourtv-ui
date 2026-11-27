@@ -471,4 +471,6 @@
     <string name="add_currency_pair">Adicionar par de moedas</string>
     <string name="invalid_currency_pair">Digite um par de moedas como EUR/RON.</string>
     <string name="duplicate_currency_pair">Esse par já está na lista.</string>
+    <string name="voice_search">"Pesquisa por voz"</string>
+    <string name="voice_search_unavailable">"A pesquisa por voz não está disponível nesta TV."</string>
 </resources>

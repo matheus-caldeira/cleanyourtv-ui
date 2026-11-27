@@ -397,4 +397,6 @@
     <string name="add_currency_pair">Döviz çifti ekle</string>
     <string name="invalid_currency_pair">EUR/RON gibi bir döviz çifti girin.</string>
     <string name="duplicate_currency_pair">Bu çift zaten listede.</string>
+    <string name="voice_search">"Sesli arama"</string>
+    <string name="voice_search_unavailable">"Bu televizyonda sesli arama kullanılamıyor."</string>
 </resources>

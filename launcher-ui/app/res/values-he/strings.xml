@@ -376,4 +376,6 @@
     <string name="add_currency_pair">הוספת צמד מטבעות</string>
     <string name="invalid_currency_pair">הזינו צמד מטבעות כמו EUR/RON.</string>
     <string name="duplicate_currency_pair">הצמד הזה כבר ברשימה.</string>
+    <string name="voice_search">"חיפוש קולי"</string>
+    <string name="voice_search_unavailable">"חיפוש קולי אינו זמין בטלוויזיה זו."</string>
 </resources>

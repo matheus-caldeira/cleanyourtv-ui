@@ -429,4 +429,6 @@
     <string name="add_currency_pair">Добавить валютную пару</string>
     <string name="invalid_currency_pair">Введи валютную пару, например EUR/RON.</string>
     <string name="duplicate_currency_pair">Эта пара уже в списке.</string>
+    <string name="voice_search">"Голосовой поиск"</string>
+    <string name="voice_search_unavailable">"На этом телевизоре голосовой поиск недоступен."</string>
 </resources>
