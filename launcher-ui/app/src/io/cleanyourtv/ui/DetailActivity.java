@@ -732,7 +732,7 @@ public class DetailActivity extends Activity {
         String[][] types = {{"flatrate", Strings.get(R.string.subscription)}, {"free", Strings.get(R.string.free)},
                 {"ads", Strings.get(R.string.free_with_ads)}, {"rent", Strings.get(R.string.rent)}, {"buy", Strings.get(R.string.buy)}};
         Set<String> added = new HashSet<>();
-        boolean offersHidden = false;
+        boolean offersHidden = false, appsMissing = false;
         for (String[] type : types) {
             JSONArray list = watchRegion == null ? null : watchRegion.optJSONArray(type[0]);
             if ((hideRentals && "rent".equals(type[0])) || (hidePurchases && "buy".equals(type[0]))) {
@@ -746,13 +746,15 @@ public class DetailActivity extends Activity {
                 String name = p.optString("provider_name");
                 if (Providers.showInWhereToWatch(this, name, hideServicesWithoutApps)) {
                     whereLine.addView(chip(pid, name, p.optString("logo_path"), type[1]));
+                } else {
+                    appsMissing = true;
                 }
             }
         }
         for (int i = providerChips.size() - 1; i >= 0; i--) whereLine.addView(providerChips.get(i), firstProvider);
         if (offersHidden) {
             whereEmpty.setText(Strings.get(R.string.no_viewing_options_match_your_filters));
-        } else if (hideServicesWithoutApps) {
+        } else if (appsMissing) {   // only when that filter took an offer away: a title on no service says so
             whereEmpty.setText(Strings.get(R.string.no_official_streaming_apps_installed));
         } else {
             whereEmpty.setText(Strings.get(R.string.not_on_any_streaming_service_in_the_region_right_now));
