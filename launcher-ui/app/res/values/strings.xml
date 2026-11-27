@@ -471,4 +471,9 @@
         <item quantity="one">%1$d show</item>
         <item quantity="other">%1$d shows</item>
     </plurals>
+    <string name="hide_purchases">"Hide purchases"</string>
+    <string name="hide_rentals">"Hide rentals"</string>
+    <string name="hide_services_without_installed_apps">"Hide services without installed apps"</string>
+    <string name="no_official_streaming_apps_installed">"No streaming services for this title have an official app installed."</string>
+    <string name="no_viewing_options_match_your_filters">"No viewing options match your filters."</string>
 </resources>

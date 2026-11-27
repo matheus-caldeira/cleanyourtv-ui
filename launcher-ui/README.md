@@ -149,6 +149,11 @@ a remote button runs `live`). Settings → Inputs also picks which inputs the dr
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
 
+Settings → **Services** also offers **Hide services without installed apps**, **Hide rentals** and
+**Hide purchases** for the streaming offers on a title’s **Where to watch** row. All three default to off.
+The installed-app filter checks the service’s official app even when another app is assigned to open it.
+The row explains when no streaming offers match the filters. It refreshes on return from Settings.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).

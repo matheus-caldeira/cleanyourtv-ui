@@ -45,6 +45,20 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   name or with the `android.settings.APPLICATION_DEVELOPMENT_SETTINGS` action. Install an app that
   opens activities by name (Activity Launcher) from the Play Store, open that screen and switch on
   USB debugging there. When no app can open it either, see the carrier-box bullet above.
+- **The firmware's own `ADB debug` switch and Android's Developer options both exist, and Android's
+  pairing never completes while the vendor switch is on.** On a
+  [Magcubic HY300 PRO (not the Plus)](https://github.com/Gathin23/cleanyourtv/issues/4296), Android 14,
+  build not reported, the vendor switch (Other settings > Developer mode) was on and the pairing code on
+  Android's own Wireless debugging page never got the computer in. The order that worked: switch the
+  **vendor ADB off**; open the stock Android Settings app with Activity Launcher and turn on developer
+  options there; switch on "USB debug" and "Wireless debug" - the first enable of Wireless debug freezes
+  the projector, so hold the power button until it restarts, go back and enable Wireless debugging again;
+  open "Pair device with pairing code", pair from the computer with the endpoint the screen shows, port
+  included, which is not the connection port; then `adb connect <tv ip>` with no port, and `adb shell`
+  answers. That set then ran the clean-up and installed the launcher. Both behaviours - the freeze on the
+  first enable, and the switch coming back off at every restart - are on the family's Plus unit too, in
+  [the HY300 Pro+ header](../examples/magcubic-hy300-pro-plus/debloat.txt). Switch Wireless debugging and USB
+  debugging off again when you are done.
 - **USB debugging never opens port 5555** on some Google TV sets (a Skyworth-built Philips among
   them). Pair once through Wireless debugging with the stock `adb` (`adb pair <ip>:<port> <code>`,
   then `adb connect`), run `adb tcpip 5555`, and `tools/tv.py` works from then on. Keep 5555 closed
@@ -893,8 +907,8 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   The same state came one step earlier on a NOVA 32" (CVTE `Hi3751V350`, Android 14, build
   `20241015_034630`): `com.cvte.tv.launcher.space` was disabled and FLauncher
   (`me.efesser.flauncher`) set as Home, and a power cut landed during the reboot that would have
-  applied the two. The panel stays on the animated `WISDOM SHARE smart cloud tv` logo with the
-  network never coming up, so the `adb connect` above answers nothing at all, and the combinations
+  applied the two. The panel stays on the animated `WISDOM SHARE smart cloud tv` logo with Wi-Fi never
+  coming up, which leaves the `adb connect` above without an address to reach, and the combinations
   the report tried - Power held 30 s, SOURCE and MENU on the remote, Power together with the
   remote's Power, F12/F2/Del/Esc, Shift or Ctrl held from power-on - all left it there. No pinhole
   RESET or SERVICE button is on the set either, and Ctrl+Alt+Del on a USB keyboard reboots it, which
@@ -904,6 +918,21 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   the factory menu that session had enabled ADB from - `MENU`, then `1147`, then `DEBUG`, as
   [`examples/sankey-smart-tv-hi3751v350/README.md`](../examples/sankey-smart-tv-hi3751v350/README.md)
   has it on the same SoC - is drawn by the running TV, so it is no way back in either.
+  Not a button combination, but one owner got such a set back over its **Ethernet** port
+  ([#2516](https://github.com/Gathin23/cleanyourtv/issues/2516), an HQ HQS32NKHM on the same SoC family,
+  CVTE `Hi3751V352E`, Android 14 SDK 34, stock launcher `com.cvte.tv.launcher.brhq`): `adbd` and the wired
+  interface come up long before `sys.boot_completed`, so a set stuck on the animation still has its wired
+  interface broadcasting DHCP `DISCOVER` and still advertises `_adb._tcp` on 5555 (`adb mdns services`
+  finds it) - it has no address to connect to, not no shell. A cable straight from the set to a laptop
+  and one DHCP answer on that link gives it an address: read the set's MAC from
+  `sudo tcpdump -i <en0> -ne 'udp port 67 or udp port 68'`, then serve a single lease with
+  `sudo dnsmasq --interface=<en0> --bind-interfaces --dhcp-authoritative --dhcp-host=<the set's MAC>,169.254.130.100 --dhcp-range=169.254.130.100,169.254.130.199,255.255.0.0,12h --log-dhcp`.
+  `adb connect 169.254.130.100:5555` answered there, and `pm enable com.cvte.tv.launcher.brhq` over it
+  let the boot finish (`sys.boot_completed=1`) with no recovery menu, case opening or firmware flash.
+  The key that set already trusted is what authorises the shell, so this reaches a set whose debugging
+  was already on and nothing else, and Wi-Fi stays dead in this state - it needs the framework, which is
+  why the route is wired-only. It is what to try once the boot is already stuck, not a reason to treat
+  disabling a CVTE launcher as safer.
   The prompt therefore keeps the stock launcher enabled on CVTE boards without a tested list.
 - **Accounts & profiles is empty after the stock launcher is disabled** (TCL 75C845X2, `G08_4K_GB`,
   Google TV 14, [#304](https://github.com/Gathin23/cleanyourtv/discussions/304)). The accounts are still
@@ -1332,6 +1361,18 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   `low_power_standby_enabled` stays 1, and the firmware sets it back to 1 at every boot. Apps may not read or write
   it on Android 12 and later; only the system and the shell can (`tools/tv.py 'settings put global
   low_power_standby_enabled 0'`, again after each boot). It keeps more of the TV awake in standby.
+- **The set stops reaching deep standby: Bluetooth stays connected all night, and it wakes at once** (TCL 55C71K,
+  `G08_4K_GB`, Google TV 14, `UTT2.250416.001 AU02`). `com.mediatek.backgrounddetection` is not a background-jobs
+  package on this board: its `QhbReceiver` handles `SCREEN_OFF`/`SCREEN_ON` and takes part in suspend. Disabled,
+  TCL's `TclPowerManagerServiceEx` still starts standby and drops its wakelocks, but every suspend attempt aborts:
+  `dumpsys batterystats` lists `Abort: One or more tasks refusing to freeze` and
+  `alarmtimer.0.auto failed to suspend: error -16`, and
+  `tools/tv.py "dumpsys alarm | grep -m2 'Runtime uptime'"` prints the same elapsed and uptime, so no time was
+  spent suspended. `pm enable com.mediatek.backgrounddetection` brings deep standby back; wait about 40 s before
+  rebooting, as an immediate reboot lost the change on that set. `persist.tcl.totalstrtimes` and
+  `persist.tcl.totalboottimes` stop counting once TCL's own apps are disabled, so they cannot be used to check it.
+  Lists that still disable the package: `grep -l '^com.mediatek.backgrounddetection' examples/*/debloat*.txt`
+  ([#4499](https://github.com/Gathin23/cleanyourtv/issues/4499)).
 - **Wireless debugging shows "IP address & port: unavailable" after a reboot** (same set; the Q7C notes in
   `examples/tcl-q7c-google-tv` saw it too). It happens when Wireless debugging is switched on before Wi-Fi is up,
   as at boot: the TLS server never binds and `adb mdns services` lists no `_adb-tls-connect._tcp`. Switching it
@@ -1458,6 +1499,11 @@ turned off in Settings stays off.
   off one `getevent -t` press and try the `EV_KEY` one when the `MSC_SCAN` one matches nothing. That
   board also brings the stock launcher back within minutes of `pm disable-user` (the
   `com.xgimi.xrmservice` bullet above), and while it is on, the gear and Home open Google TV.
+  For a button that should open the Inputs menu rather than Settings, the scancode goes in `app_keys` with
+  `"inputs"` in place of a package: `"scan:365:inputs"` on a TCL 65C745 or 65C735, whose source button
+  arrives as a key Android does not map ([that list's header](../examples/tcl-65c735/debloat.txt)), and
+  `"178:inputs"` in [the VU31's config](../examples/sony-bravia-vu31/config.json). `input_key_keycodes`
+  holds keycodes, so it cannot answer a press that has none, and `settings_key_scancodes` opens Settings.
 - **All vendor buttons die at once** and `logcat` says `GLOBAL_BUTTON ... process is bad`: the
   global-key receiver crashes on the disabled launcherx and Android stops starting it. Map every such
   keycode in the helpers, also for disabled apps. See [the MOSR4 note](devices/xiaomi-mitv-mosr4.md).

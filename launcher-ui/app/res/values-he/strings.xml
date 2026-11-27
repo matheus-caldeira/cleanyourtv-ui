@@ -367,4 +367,9 @@
     <string name="sleep_more">"עוד 15 דקות"</string>
     <string name="sleep_keep_on">"להשאיר את הטלוויזיה דולקת"</string>
     <string name="sleep_now">"לכבות עכשיו"</string>
+    <string name="hide_purchases">"הסתרת אפשרויות קנייה"</string>
+    <string name="hide_services_without_installed_apps">"הסתרת שירותים ללא אפליקציות מותקנות"</string>
+    <string name="hide_rentals">"הסתרת אפשרויות השכרה"</string>
+    <string name="no_viewing_options_match_your_filters">"אין אפשרויות צפייה שתואמות למסננים שלך."</string>
+    <string name="no_official_streaming_apps_installed">"לא מותקנות אפליקציות סטרימינג רשמיות."</string>
 </resources>
