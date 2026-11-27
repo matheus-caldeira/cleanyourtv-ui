@@ -34,7 +34,7 @@ class WeatherForecastTest(unittest.TestCase):
         self.assertIn("forecast_days=6", q)
         self.assertIn("forecast_hours=48", q)
         hosts = set(re.findall(r"https://([a-z.-]+)", data))
-        self.assertEqual(hosts, {"api.open-meteo.com", "geocoding-api.open-meteo.com", "api.binance.com"})
+        self.assertEqual(hosts, {"api.open-meteo.com", "geocoding-api.open-meteo.com", "api.binance.com", "api.frankfurter.dev"})
 
     def test_cache_remembers_its_query(self):
         data = read("HomeData.java")

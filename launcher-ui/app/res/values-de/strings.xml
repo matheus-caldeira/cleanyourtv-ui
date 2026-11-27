@@ -177,4 +177,8 @@
     <string name="hide_rentals">"Leihangebote ausblenden"</string>
     <string name="no_viewing_options_match_your_filters">"Keine Wiedergabeoptionen entsprechen deinen Filtern."</string>
     <string name="no_official_streaming_apps_installed">"Keine offiziellen Streaming-Apps installiert."</string>
+    <string name="my_quotes">Meine Kurse</string>
+    <string name="add_currency_pair">Währungspaar hinzufügen</string>
+    <string name="invalid_currency_pair">Gib ein Währungspaar wie EUR/RON ein.</string>
+    <string name="duplicate_currency_pair">Dieses Paar steht bereits in der Liste.</string>
 </resources>

@@ -372,4 +372,8 @@
     <string name="hide_rentals">"הסתרת אפשרויות השכרה"</string>
     <string name="no_viewing_options_match_your_filters">"אין אפשרויות צפייה שתואמות למסננים שלך."</string>
     <string name="no_official_streaming_apps_installed">"לא מותקנות אפליקציות סטרימינג רשמיות."</string>
+    <string name="my_quotes">השערים שלי</string>
+    <string name="add_currency_pair">הוספת צמד מטבעות</string>
+    <string name="invalid_currency_pair">הזינו צמד מטבעות כמו EUR/RON.</string>
+    <string name="duplicate_currency_pair">הצמד הזה כבר ברשימה.</string>
 </resources>

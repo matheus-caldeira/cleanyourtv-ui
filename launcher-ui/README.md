@@ -154,6 +154,17 @@ Settings → **Services** also offers **Hide services without installed apps**, 
 The installed-app filter checks the service’s official app even when another app is assigned to open it.
 The row explains when no streaming offers match the filters. It refreshes on return from Settings.
 
+## Custom currency pairs
+
+Settings → Home Settings → **My quotes** lets you add up to four currency pairs, such as
+`EUR/RON` or `USD/UAH`, and remove them later. The quotes card in the home screen’s drawer shows
+the rate and a green or red percentage badge alongside any enabled cryptocurrencies.
+
+Rates come from [Frankfurter](https://frankfurter.dev/) and are checked at most once an hour while
+the home screen is active. The percentage compares the latest two published rates, including across
+weekends and holidays. These are reference rates updated on business days. The last successful rates
+are cached for offline use. No currency pairs are configured initially.
+
 ## remote.json
 
 A model's remote: `examples/<model>/remote.json`, pushed with `config.sh --remote` (or as config.json's `remote`).

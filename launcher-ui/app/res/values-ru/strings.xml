@@ -425,4 +425,8 @@
     <string name="hide_services_without_installed_apps">"Скрывать сервисы без установленных приложений"</string>
     <string name="no_official_streaming_apps_installed">"На ТВ нет официальных приложений сервисов, где доступен этот фильм или сериал."</string>
     <string name="no_viewing_options_match_your_filters">"С учётом фильтров вариантов просмотра нет."</string>
+    <string name="my_quotes">Мои котировки</string>
+    <string name="add_currency_pair">Добавить валютную пару</string>
+    <string name="invalid_currency_pair">Введи валютную пару, например EUR/RON.</string>
+    <string name="duplicate_currency_pair">Эта пара уже в списке.</string>
 </resources>

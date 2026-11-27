@@ -179,4 +179,8 @@
     <string name="hide_rentals">"Ocultar opciones de alquiler"</string>
     <string name="no_viewing_options_match_your_filters">"Ninguna opción coincide con tus filtros."</string>
     <string name="no_official_streaming_apps_installed">"No hay aplicaciones oficiales de streaming instaladas."</string>
+    <string name="my_quotes">Mis cotizaciones</string>
+    <string name="add_currency_pair">Añadir par de divisas</string>
+    <string name="invalid_currency_pair">Introduce un par de divisas como EUR/RON.</string>
+    <string name="duplicate_currency_pair">Este par ya está en la lista.</string>
 </resources>

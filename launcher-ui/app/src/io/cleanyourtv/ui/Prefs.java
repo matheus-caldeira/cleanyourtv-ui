@@ -229,6 +229,15 @@ final class Prefs {
 
     static void setCurrency(String currency) { put("currency", currency.trim().toUpperCase(Locale.ROOT)); }
 
+    static final int MAX_FX_PAIRS = 4;
+
+    static List<String> fxPairs() {
+        String saved = sp().getString("fxPairs", "");
+        return saved.isEmpty() ? new ArrayList<>() : new ArrayList<>(java.util.Arrays.asList(saved.split(",")));
+    }
+
+    static void setFxPairs(List<String> pairs) { put("fxPairs", String.join(",", pairs)); }
+
     // MARK: - Widgets and coins
 
     static boolean weather() { return sp().getBoolean("weather", true); }

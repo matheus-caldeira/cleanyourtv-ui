@@ -484,4 +484,8 @@
     <string name="hide_services_without_installed_apps">"Приховувати сервіси без установлених застосунків"</string>
     <string name="no_official_streaming_apps_installed">"На ТВ немає офіційних застосунків сервісів, де доступний цей фільм або серіал."</string>
     <string name="no_viewing_options_match_your_filters">"З урахуванням фільтрів варіантів перегляду немає."</string>
+    <string name="my_quotes">Мої котирування</string>
+    <string name="add_currency_pair">Додати валютну пару</string>
+    <string name="invalid_currency_pair">Введіть валютну пару, наприклад EUR/RON.</string>
+    <string name="duplicate_currency_pair">Ця пара вже є у списку.</string>
 </resources>
