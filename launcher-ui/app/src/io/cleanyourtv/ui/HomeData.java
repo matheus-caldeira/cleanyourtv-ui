@@ -87,8 +87,9 @@ final class HomeData {
     static int rainInHours(Weather w, long now) {
         if (isRain(w.code)) return 0;
         for (int i = 0; i < w.hourCode.size() && i < w.hours.size(); i++) {
-            if (!isRain(w.hourCode.get(i))) continue;
-            return Math.max(1, Math.round((w.hours.get(i) - now) / 3_600_000f));
+            long ahead = w.hours.get(i) - now;
+            if (ahead <= 0 || !isRain(w.hourCode.get(i))) continue;
+            return Math.max(1, Math.round(ahead / 3_600_000f));
         }
         return -1;
     }
