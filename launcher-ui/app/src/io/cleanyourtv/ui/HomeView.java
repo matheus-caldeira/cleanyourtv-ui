@@ -1788,7 +1788,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             x += tw + gap;
         }
         float cardsTop = CARDS_TOP * k, split = left + (right - left) * 0.585f;
-        boolean wx = Prefs.weather(), qt = Prefs.quotes() && HomeData.active().length > 0;
+        boolean wx = Prefs.weather(), qt = HomeData.quotesVisible();
         // A card that is off gives its room to the other one.
         weatherCard.set(left, cardsTop, qt ? split - 16 * k : right, cardsTop + CARDS_H * k);
         quotesCard.set(wx ? split + 16 * k : left, cardsTop, right, cardsTop + CARDS_H * k);
@@ -1898,7 +1898,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
         if (Prefs.weather()) drawWeatherCard(c, weatherCard);
-        if (Prefs.quotes() && HomeData.active().length > 0) drawQuotesCard(c, quotesCard);
+        if (HomeData.quotesVisible()) drawQuotesCard(c, quotesCard);
     }
 
     /** A drawer row's title over its first button: at the button's left edge, or its right edge in Hebrew. */
@@ -2063,7 +2063,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * sunrise and sunset, "12 min ago").
      */
     private String drawerCardsKey() {
-        return data.weatherAt + "|" + data.pricesAt + "|" + Prefs.version + "|" + Ui.language + "|"
+        return data.weatherAt + "|" + data.pricesAt + "|" + data.fxUpdatedAt + "|" + Prefs.version + "|" + Ui.language + "|"
                 + Float.floatToIntBits(dark()) + "|" + System.currentTimeMillis() / 60_000;
     }
 
@@ -2098,27 +2098,44 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void drawPrices(Canvas c, RectF r) {
         float x = r.left + 34 * k, right = r.right - 34 * k;
         refreshDrawerText();
-        c.drawText(Strings.get(R.string.crypto), x, r.top + 54 * k, cardTitle);
-        c.drawText(staleText, right, r.top + 54 * k, cardDimRight);
-        float cap = Ui.cap(cardText);
+        List<String> pairs = Prefs.fxPairs();
         int[] coins = HomeData.active();
+        c.drawText(Strings.get(pairs.isEmpty() ? R.string.crypto : R.string.my_quotes), x, r.top + 54 * k, cardTitle);
+        if (coins.length > 0) c.drawText(staleText, right, r.top + 54 * k, cardDimRight);
+        float cap = Ui.cap(cardText);
+        float step = Math.min(52, 208f / Math.max(1, coins.length + pairs.size()));
+        float halfBubble = Math.min(17, step / 2 - 1) * k;
         for (int j = 0; j < coins.length; j++) {
             int i = coins[j];
-            float base = r.top + (110 + 52 * j) * k, mid = base - cap / 2;
+            float base = r.top + (110 + step * j) * k, mid = base - cap / 2;
             float gw = Glyphs.width(getContext(), HomeData.COINS[i], cap);
             Glyphs.coin(getContext(), c, HomeData.COINS[i], x + 14 * k, mid, cap, tone(L_DIM, 0xCCFFFFFF));
             c.drawText(HomeData.coinName(i), x + Math.max(gw, 28 * k) / 2 + 30 * k, base, cardText);
             c.drawText(priceText[i], right - 128 * k, base, pricePaint);
-            double change = data.changes[i];
-            if (Double.isNaN(change)) continue;
-            int color = change >= 0 ? tone(0xFF248A3D, UP_COLOR) : tone(0xFFD70015, DOWN_COLOR);
-            tmp.set(right - 108 * k, mid - 17 * k, right, mid + 17 * k);
-            fill.setShader(null);
-            fill.setColor(Ui.alpha(color, 0.2f));
-            c.drawRoundRect(tmp, 17 * k, 17 * k, fill);
-            changePaint.setColor(color);
-            c.drawText(changeText[i], tmp.centerX(), mid + Ui.halfCap(changePaint), changePaint);
+            drawQuoteChange(c, right, mid, halfBubble, data.changes[i], changeText[i]);
         }
+        for (int i = 0; i < pairs.size(); i++) {
+            String pair = pairs.get(i);
+            HomeData.FxRate rate = data.fxRate(pair);
+            float base = r.top + (110 + step * (coins.length + i)) * k;
+            c.drawText(pair, x, base, cardText);
+            String price = rate == null ? "—" : rate.text();
+            c.drawText(price, right - 128 * k, base, pricePaint);
+            if (rate != null) {
+                drawQuoteChange(c, right, base - cap / 2, halfBubble, rate.change, HomeData.change(rate.change));
+            }
+        }
+    }
+
+    private void drawQuoteChange(Canvas c, float right, float mid, float halfBubble, double change, String text) {
+        if (Double.isNaN(change)) return;
+        int color = change >= 0 ? tone(0xFF248A3D, UP_COLOR) : tone(0xFFD70015, DOWN_COLOR);
+        tmp.set(right - 108 * k, mid - halfBubble, right, mid + halfBubble);
+        fill.setShader(null);
+        fill.setColor(Ui.alpha(color, 0.2f));
+        c.drawRoundRect(tmp, halfBubble, halfBubble, fill);
+        changePaint.setColor(color);
+        c.drawText(text, tmp.centerX(), mid + Ui.halfCap(changePaint), changePaint);
     }
 
     // MARK: - Focus
@@ -3217,7 +3234,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < shelf.size(); i++) out.add(a11yId(Z_SHELF, i));
         for (int i = 0; i < drawerItems.size(); i++) out.add(a11yId(Z_DRAWER, i));
         if (drawerOpen && Prefs.weather()) out.add(a11yId(WIDGETS, 0));
-        if (drawerOpen && Prefs.quotes() && HomeData.active().length > 0) out.add(a11yId(WIDGETS, 1));
+        if (drawerOpen && HomeData.quotesVisible()) out.add(a11yId(WIDGETS, 1));
     }
 
     private String a11yText(int id) {
@@ -3326,7 +3343,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         List<Integer> out = new ArrayList<>();
         if (!drawerOpen) return out;
         if (Prefs.weather()) out.add(0);
-        if (Prefs.quotes() && HomeData.active().length > 0) out.add(1);
+        if (HomeData.quotesVisible()) out.add(1);
         return out;
     }
 
@@ -3438,12 +3455,25 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The quotes card as TalkBack reads it: each coin with its price and 24 h change. */
     private String quotesText() {
-        StringBuilder s = new StringBuilder(Strings.get(R.string.crypto));
-        String stale = HomeData.staleness(data.pricesAt, 5 * 60_000L);
-        s.append(", ").append(stale.isEmpty() ? Strings.get(R.string.label_24h_change) : Strings.get(R.string.stale_quote_prefix) + stale).append('.');
+        List<String> pairs = Prefs.fxPairs();
+        StringBuilder s = new StringBuilder(Strings.get(pairs.isEmpty() ? R.string.crypto : R.string.my_quotes));
+        if (HomeData.active().length > 0) {
+            String stale = HomeData.staleness(data.pricesAt, 5 * 60_000L);
+            s.append(", ").append(stale.isEmpty() ? Strings.get(R.string.label_24h_change)
+                    : Strings.get(R.string.stale_quote_prefix) + stale).append('.');
+        }
         for (int i : HomeData.active()) {
             s.append(' ').append(HomeData.coinName(i)).append(' ').append(HomeData.brl(data.prices[i]));
             if (!Double.isNaN(data.changes[i])) s.append(", ").append(HomeData.change(data.changes[i]));
+            s.append('.');
+        }
+        for (String pair : pairs) {
+            HomeData.FxRate rate = data.fxRate(pair);
+            s.append(' ').append(pair);
+            if (rate != null) {
+                s.append(", ").append(rate.text()).append(", ").append(rate.date);
+                if (!Double.isNaN(rate.change)) s.append(", ").append(HomeData.change(rate.change));
+            }
             s.append('.');
         }
         return s.toString();

@@ -149,6 +149,22 @@ a remote button runs `live`). Settings → Inputs also picks which inputs the dr
 hides one, ← → moves it, Live TV included. Until it is used every input shows, in the TV's order; a port the TV lists
 later joins at the end, and one it stops listing keeps its place.
 
+Settings → **Services** also offers **Hide services without installed apps**, **Hide rentals** and
+**Hide purchases** for the streaming offers on a title’s **Where to watch** row. All three default to off.
+The installed-app filter checks the service’s official app even when another app is assigned to open it.
+The row explains when no streaming offers match the filters. It refreshes on return from Settings.
+
+## Custom currency pairs
+
+Settings → Home Settings → **My quotes** lets you add up to four currency pairs, such as
+`EUR/RON` or `USD/UAH`, and remove them later. The quotes card in the home screen’s drawer shows
+the rate and a green or red percentage badge alongside any enabled cryptocurrencies.
+
+Rates come from [Frankfurter](https://frankfurter.dev/) and are checked at most once an hour while
+the home screen is active. The percentage compares the latest two published rates, including across
+weekends and holidays. These are reference rates updated on business days. The last successful rates
+are cached for offline use. No currency pairs are configured initially.
+
 Explore’s Search page has a microphone button. Recognized speech fills the query field and starts the search.
 Google Speech Services is preferred when installed, with the system speech activity as a fallback.
 Recognition is handled by that app using its own permissions.

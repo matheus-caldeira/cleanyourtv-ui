@@ -229,6 +229,15 @@ final class Prefs {
 
     static void setCurrency(String currency) { put("currency", currency.trim().toUpperCase(Locale.ROOT)); }
 
+    static final int MAX_FX_PAIRS = 4;
+
+    static List<String> fxPairs() {
+        String saved = sp().getString("fxPairs", "");
+        return saved.isEmpty() ? new ArrayList<>() : new ArrayList<>(java.util.Arrays.asList(saved.split(",")));
+    }
+
+    static void setFxPairs(List<String> pairs) { put("fxPairs", String.join(",", pairs)); }
+
     // MARK: - Widgets and coins
 
     static boolean weather() { return sp().getBoolean("weather", true); }
@@ -377,6 +386,15 @@ final class Prefs {
     /** Picks from every provider in the region, not only the ones with an app on the TV. */
     static boolean showAllProviders() { return sp().getBoolean("showAllProviders", false); }
     static void setShowAllProviders(boolean on) { put("showAllProviders", on); }
+
+    static boolean hideServicesWithoutApps() { return sp().getBoolean("hideServicesWithoutApps", false); }
+    static void setHideServicesWithoutApps(boolean on) { put("hideServicesWithoutApps", on); }
+
+    static boolean hideRentals() { return sp().getBoolean("hideRentals", false); }
+    static void setHideRentals(boolean on) { put("hideRentals", on); }
+
+    static boolean hidePurchases() { return sp().getBoolean("hidePurchases", false); }
+    static void setHidePurchases(boolean on) { put("hidePurchases", on); }
 
     // MARK: - Trailer player
 

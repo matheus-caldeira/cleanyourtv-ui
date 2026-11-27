@@ -501,10 +501,11 @@ public class SettingsActivity extends Activity {
         }
 
         private static String versionName(Context c) {
+            String commit = Config.GIT_COMMIT.isEmpty() ? "" : " · " + Config.GIT_COMMIT;
             try {
-                return "CleanYourTV UI " + c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+                return "CleanYourTV UI " + c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName + commit;
             } catch (android.content.pm.PackageManager.NameNotFoundException e) {
-                return "CleanYourTV UI";
+                return "CleanYourTV UI" + commit;
             }
         }
 
@@ -624,6 +625,7 @@ public class SettingsActivity extends Activity {
             l.add("Ethereum");
             l.add("Solana");
             if (dollar()) l.add(Strings.get(R.string.dollar));
+            l.add(Strings.get(R.string.my_quotes));
             return l.toArray(new String[0]);
         }
 
@@ -653,7 +655,8 @@ public class SettingsActivity extends Activity {
             v[QUOTES_ROW] = onOff(Prefs.quotes());
             v[NOW_PLAYING_ROW] = playingValue();
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
-            for (int i = COIN_ROWS; i < v.length; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
+            for (int i = COIN_ROWS; i < v.length - 1; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
+            v[v.length - 1] = "›";
             return v;
         }
 
@@ -723,6 +726,7 @@ public class SettingsActivity extends Activity {
                 Prefs.setButton(b.id, appPkgs.get(next));
                 return;
             }
+            if (focus == settingLabels().length - 1) return;
             switch (focus) {
                 case 0: {
                     int at = java.util.Arrays.asList(LANGUAGES).indexOf(Prefs.language());
@@ -769,6 +773,57 @@ public class SettingsActivity extends Activity {
                     break;
             }
             HomeData.get(getContext()).settingsChanged();
+        }
+
+        private void editQuotes() {
+            List<String> pairs = Prefs.fxPairs();
+            List<String> rows = new ArrayList<>(pairs);
+            if (pairs.size() < Prefs.MAX_FX_PAIRS) rows.add(Strings.get(R.string.add_currency_pair));
+            new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(Strings.get(R.string.my_quotes))
+                    .setItems(rows.toArray(new String[0]), (dialog, which) -> {
+                        if (which == pairs.size()) {
+                            addCurrencyPair(pairs);
+                        } else {
+                            String pair = pairs.get(which);
+                            new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                                    .setTitle(pair)
+                                    .setPositiveButton(Strings.get(R.string.remove_2), (confirm, button) -> {
+                                        pairs.remove(pair);
+                                        Prefs.setFxPairs(pairs);
+                                        editQuotes();
+                                    })
+                                    .setNegativeButton(Strings.get(R.string.cancel), (confirm, button) -> editQuotes())
+                                    .show();
+                        }
+                    })
+                    .setNegativeButton(Strings.get(R.string.close), null)
+                    .show();
+        }
+
+        private void addCurrencyPair(List<String> pairs) {
+            EditText field = new EditText(activity);
+            field.setSingleLine(true);
+            field.setHint("EUR/RON");
+            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(Strings.get(R.string.add_currency_pair))
+                    .setView(field)
+                    .setPositiveButton(Strings.get(R.string.save), null)
+                    .setNegativeButton(Strings.get(R.string.cancel), (d, which) -> editQuotes())
+                    .create();
+            dialog.show();
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String pair = HomeData.normalizeFxPair(field.getText().toString());
+                if (pair == null || pairs.contains(pair)) {
+                    field.setError(Strings.get(pair == null ? R.string.invalid_currency_pair : R.string.duplicate_currency_pair));
+                    return;
+                }
+                pairs.add(pair);
+                Prefs.setFxPairs(pairs);
+                Prefs.setQuotes(true);
+                dialog.dismiss();
+                editQuotes();
+            });
         }
 
         private void askCity() {
@@ -1100,7 +1155,7 @@ public class SettingsActivity extends Activity {
                 rowRect.set(LIST_X * k, y, LIST_R * k, y + rowH * k);
                 float f = drawRowBackground(c, i);
                 rowLabel.setColor(blend(0xF2FFFFFF, INK, f));
-                boolean locked = i == NOW_PLAYING_ROW ? !playingAllowed : i >= COIN_ROWS && !Prefs.quotes();
+                boolean locked = i == NOW_PLAYING_ROW ? !playingAllowed : i >= COIN_ROWS && i < labels.length - 1 && !Prefs.quotes();
                 rowValue.setColor(blend(locked ? 0x59FFFFFF : 0xB3FFFFFF, locked ? 0x591C1C1E : 0xB31C1C1E, f));
                 if (locked) rowLabel.setColor(blend(0x73FFFFFF, 0x731C1C1E, f));
                 float base = rowRect.centerY() + Ui.halfCap(rowLabel);
@@ -1170,6 +1225,9 @@ public class SettingsActivity extends Activity {
                 return;
             } else if (screen == REMOTE_KEYS) {
                 openPicker(keysScroll + focus + 1);
+            } else if (screen == HOME_SETTINGS && focus == settingLabels().length - 1) {
+                editQuotes();
+                return;
             } else if (screen == HOME_SETTINGS && focus == CITY_ROW) {
                 askCity();
                 return;

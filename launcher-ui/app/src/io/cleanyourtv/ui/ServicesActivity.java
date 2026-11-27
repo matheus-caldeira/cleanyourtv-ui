@@ -86,6 +86,21 @@ public class ServicesActivity extends Activity {
                     Prefs.setShowAllProviders(!Prefs.showAllProviders());
                     build(providers);
                 }));
+        list.addView(row("hideWithoutApps", null, Strings.get(R.string.hide_services_without_installed_apps),
+                Prefs.hideServicesWithoutApps() ? Strings.get(R.string.on) : Strings.get(R.string.off), v -> {
+                    Prefs.setHideServicesWithoutApps(!Prefs.hideServicesWithoutApps());
+                    build(providers);
+                }));
+        list.addView(row("hideRentals", null, Strings.get(R.string.hide_rentals),
+                Prefs.hideRentals() ? Strings.get(R.string.on) : Strings.get(R.string.off), v -> {
+                    Prefs.setHideRentals(!Prefs.hideRentals());
+                    build(providers);
+                }));
+        list.addView(row("hidePurchases", null, Strings.get(R.string.hide_purchases),
+                Prefs.hidePurchases() ? Strings.get(R.string.on) : Strings.get(R.string.off), v -> {
+                    Prefs.setHidePurchases(!Prefs.hidePurchases());
+                    build(providers);
+                }));
         if (watchProviders != null && !watchProviders.isEmpty()) watchProvidersSection();
         if (providers == null) {
             TextView loading = TvUi.text(this, k, 26, Ui.regular, TvUi.DIM);
