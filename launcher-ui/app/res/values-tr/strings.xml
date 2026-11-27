@@ -388,6 +388,11 @@
     <string name="sleep_more">"15 dakika daha"</string>
     <string name="sleep_keep_on">"TV açık kalsın"</string>
     <string name="sleep_now">"Şimdi kapat"</string>
+    <string name="hide_purchases">"Satın alma seçeneklerini gizle"</string>
+    <string name="hide_services_without_installed_apps">"Uygulaması yüklü olmayan hizmetleri gizle"</string>
+    <string name="hide_rentals">"Kiralama seçeneklerini gizle"</string>
+    <string name="no_viewing_options_match_your_filters">"Filtrelerinize uyan izleme seçeneği yok."</string>
+    <string name="no_official_streaming_apps_installed">"Yüklü resmi yayın uygulaması yok."</string>
     <string name="my_quotes">Kurlarım</string>
     <string name="add_currency_pair">Döviz çifti ekle</string>
     <string name="invalid_currency_pair">EUR/RON gibi bir döviz çifti girin.</string>

@@ -501,10 +501,11 @@ public class SettingsActivity extends Activity {
         }
 
         private static String versionName(Context c) {
+            String commit = Config.GIT_COMMIT.isEmpty() ? "" : " · " + Config.GIT_COMMIT;
             try {
-                return "CleanYourTV UI " + c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+                return "CleanYourTV UI " + c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName + commit;
             } catch (android.content.pm.PackageManager.NameNotFoundException e) {
-                return "CleanYourTV UI";
+                return "CleanYourTV UI" + commit;
             }
         }
 

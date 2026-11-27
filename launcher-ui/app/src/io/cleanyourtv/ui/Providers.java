@@ -102,6 +102,10 @@ final class Providers {
         return null;
     }
 
+    static boolean showInWhereToWatch(Context c, String name, boolean hideWithoutApps) {
+        return !hideWithoutApps || officialApp(c, name) != null;
+    }
+
     /** The app that opens this service now, or null (none installed, or turned off). */
     static String app(Context c, int id, String name) {
         String pick = Prefs.provider(String.valueOf(id));

@@ -420,6 +420,11 @@
     <string name="sleep_more">"Ещё 15 минут"</string>
     <string name="sleep_keep_on">"Не выключать ТВ"</string>
     <string name="sleep_now">"Выключить сейчас"</string>
+    <string name="hide_purchases">"Скрывать покупку"</string>
+    <string name="hide_rentals">"Скрывать прокат"</string>
+    <string name="hide_services_without_installed_apps">"Скрывать сервисы без установленных приложений"</string>
+    <string name="no_official_streaming_apps_installed">"На ТВ нет официальных приложений сервисов, где доступен этот фильм или сериал."</string>
+    <string name="no_viewing_options_match_your_filters">"С учётом фильтров вариантов просмотра нет."</string>
     <string name="my_quotes">Мои котировки</string>
     <string name="add_currency_pair">Добавить валютную пару</string>
     <string name="invalid_currency_pair">Введи валютную пару, например EUR/RON.</string>
