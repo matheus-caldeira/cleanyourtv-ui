@@ -61,7 +61,7 @@ com.mediatek.support.webview
 
 # Mediatek casting/telemetry leftovers
 com.mediatek.airplaydaemon             # AirPlay daemon; keep it for AirPlay if com.mediatek.AirplayAPK is there
-com.mediatek.backgrounddetection
+# com.mediatek.backgrounddetection   # KEEP: on the standby path; disabled, deep standby (STR) aborts (#4499)
 com.mediatek.network
 
 # Google storefront and extras

@@ -1274,6 +1274,22 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   cannot know about, so after a big update compare `tools/tv.py 'pm list packages'` with the list
   once by hand. On a TV whose list disables the updater, this only happens when you install an
   update on purpose: enable the updater, update, `check.py --fix`, disable it again.
+- **PatchWall is back at power-on weeks after it was disabled (Xiaomi)**, with no firmware update in
+  between: seen on 27 Nov 2026 on a Redmi MiTV-MOOQ3 (Android TV 11, `RTM4.220307.164.8237`,
+  [list](../examples/redmi-mitv-mooq3/debloat.txt)), when PatchWall 4.21.151 arrived. Xiaomi's own app
+  updater, `com.xiaomi.mitv.updateservice` (system uid, holds `INSTALL_PACKAGES`, logs as
+  `PatchWallUpdateService`), asks `in.tv.global.mi.com/atv/appstore/homeupgrade` and `/appstore/upgrade`
+  at boot and every hour (alarms `ScheduleMgr$Home`, `$Hourly`, `$Device` and `$Guard`), sending a device
+  ID, and silently installs what they offer: PatchWall (`com.mitv.tvhome.atv`), Xiaomi TV+
+  (`com.mitv.tvhome.mitvplus`), Mi Channels (`com.mitv.tvhome.michannel`) and others. Installing an update
+  over a disabled app turns it back on, so PatchWall takes Home again. Play Store updates skip disabled
+  apps; this updater does not. To tell, `tools/tv.py 'dumpsys package com.mitv.tvhome.atv | grep -E
+  "lastUpdateTime|installerPackageName"'`: a `lastUpdateTime` after the day of the cleanup, with the
+  updater as installer, is this. TV Settings shows no Disable button for PatchWall while it is enabled, so
+  there is no fix from the remote alone. Over ADB: disable PatchWall again
+  (`tools/tv.py 'pm disable-user --user 0 com.mitv.tvhome.atv'`, or `check.py --fix` with the list).
+  Disabling the updater as well stops it for good, but it also stops firmware updates; enable it again to
+  check for one, as in the bullet above.
 - **The TV opens Live TV by itself at every power-on**, often on a "please scan channels" screen, with
   the new launcher already Home: seen on an ERGO DVB92YC (Changhong AI PONT, `redwood`, MT5867,
   Android TV 14, `UKNV.260514.001`). `logcat -b events -d | grep wm_set_resumed_activity` after a
@@ -2580,6 +2596,19 @@ boot-time calls go out (about two minutes in, here). Keep `always_on_vpn_lockdow
 drops every packet until the VPN is up, and a TV whose app fails to start stays offline, with no screen
 that says why. Undo:
 `tools/tv.py 'settings delete secure always_on_vpn_app; settings delete secure always_on_vpn_lockdown'`.
+
+Always-on can still lose the app at boot for another reason: the app keeps a file open on shared storage while
+Android unmounts it. Seen with personalDNSfilter (1.50.61.5, local VPN, always-on) on a Xiaomi TV Box S 3rd
+gen (MiTV-AFMU0, Google TV 14, `V816.0.11.0.UZFAABX`, 1.9 GB). The box mounts `/storage/emulated` at boot,
+then unmounts and mounts it again around `BOOT_COMPLETED`, and before the unmount vold kills every process that
+holds a file there open: `vold: Found symlink /proc/<pid>/fd/<n> referencing
+/storage/emulated/0/Android/data/<package>/...`, then `Process <package> (pid <pid>) has died`. Here the file
+was the app's DNS traffic log (`.../log/trafficlog/trafficlog_0.log`). It was killed three times in 16 s and
+did not come back: no process, no `tun0`, and the TV ran unfiltered. With the traffic log off
+(`enableTrafficLog = false` in its `dnsfilter.conf`) vold no longer killed it, and the VPN came up on every
+later reboot. Right after a reboot, `tools/tv.py 'logcat -d -b all' | grep -E 'Found symlink|has died'` shows
+whether this is what happened. An app that keeps a file open under `Android/data` while the TV boots can be
+killed the same way.
 
 ## The home screen reads about 40 ms and every tuning change lands inside the noise
 

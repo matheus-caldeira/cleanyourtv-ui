@@ -57,7 +57,7 @@ com.android.tv.feedbackconsent
 com.android.adservices.api             # Privacy Sandbox
 com.android.ondevicepersonalization.services
 com.android.federatedcompute.services
-com.mediatek.backgrounddetection
+# com.mediatek.backgrounddetection   # KEEP: on the standby path; disabled, deep standby (STR) aborts (#4499)
 com.mediatek.network                   # Mediatek network monitor leftover
 
 # Extras nobody asked for
